@@ -197,8 +197,8 @@ function CustomersPage() {
               ))}
             </div>
           )}
-        </>
-      )}
+      </>
+
 
       <TopDrawer
         open={drawerOpen}
