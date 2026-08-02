@@ -107,25 +107,8 @@ function CustomersPage() {
         </button>
       }
     >
-      {/* Tabs */}
-      <div className="mb-5 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
-        {(["customers", "segments"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold capitalize transition ${
-              tab === t ? "bg-amber-400 text-black" : "text-white/60 hover:text-white"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      <>
 
-      {tab === "segments" ? (
-        <SegmentsPanel />
-      ) : (
-        <>
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
