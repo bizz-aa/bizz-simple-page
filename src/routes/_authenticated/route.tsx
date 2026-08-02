@@ -161,8 +161,11 @@ function AuthedLayout() {
         </header>
 
         <main className="flex-1 overflow-x-hidden px-6 pb-6 pt-8">
-          <Outlet />
+          <div key={pathname} className="page-transition">
+            <Outlet />
+          </div>
         </main>
+
       </div>
     </div>
   );
