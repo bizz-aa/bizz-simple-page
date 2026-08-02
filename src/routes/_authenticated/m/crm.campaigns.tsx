@@ -15,9 +15,9 @@ const STATUSES = ["draft", "active", "paused", "completed"] as const;
 
 type Form = {
   name: string; description: string; budget: number; channel: string;
-  status: string; start_date: string; end_date: string; target_segment_id: string;
+  status: string; start_date: string; end_date: string;
 };
-const empty: Form = { name: "", description: "", budget: 0, channel: "sms", status: "draft", start_date: "", end_date: "", target_segment_id: "" };
+const empty: Form = { name: "", description: "", budget: 0, channel: "sms", status: "draft", start_date: "", end_date: "" };
 
 function CampaignsPage() {
   const qc = useQueryClient();
@@ -26,10 +26,6 @@ function CampaignsPage() {
   const [form, setForm] = useState<Form>(empty);
   const [selected, setSelected] = useState<any | null>(null);
 
-  const { data: segments = [] } = useQuery({
-    queryKey: ["crm-segments"],
-    queryFn: async () => (await supabase.from("customer_segments").select("id,name")).data ?? [],
-  });
   const { data: campaigns = [] } = useQuery({
     queryKey: ["crm-campaigns"],
     queryFn: async () => (await supabase.from("marketing_campaigns").select("*").order("created_at", { ascending: false })).data ?? [],
@@ -50,7 +46,6 @@ function CampaignsPage() {
         status: form.status,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
-        target_segment_id: form.target_segment_id || null,
       };
       const { error } = editing
         ? await supabase.from("marketing_campaigns").update(payload).eq("id", editing.id)
@@ -76,7 +71,6 @@ function CampaignsPage() {
       name: c.name, description: c.description ?? "", budget: c.budget,
       channel: c.channel, status: c.status,
       start_date: c.start_date ?? "", end_date: c.end_date ?? "",
-      target_segment_id: c.target_segment_id ?? "",
     });
     setOpen(true);
   };
@@ -157,12 +151,6 @@ function CampaignsPage() {
           <Field label="Status">
             <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={inputCls}>
               {STATUSES.map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </Field>
-          <Field label="Target Segment">
-            <select value={form.target_segment_id} onChange={(e) => setForm({ ...form, target_segment_id: e.target.value })} className={inputCls}>
-              <option value="">All customers</option>
-              {(segments as any[]).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </Field>
           <div className="grid grid-cols-2 gap-3 md:col-span-1">
