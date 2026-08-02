@@ -54,6 +54,8 @@ function AuthedLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [user, setUser] = useState<{ email?: string | null } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const heading = useHeading(pathname);
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
