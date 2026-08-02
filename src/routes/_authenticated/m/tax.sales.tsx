@@ -7,8 +7,8 @@ export const Route = createFileRoute("/_authenticated/m/tax/sales")({ component:
 function TaxSalesHub() {
   return (
     <TaxLayout
-      title="Mauzo ya Risiti"
-      subtitle="Mauzo yaliyorekodiwa kwa ajili ya kodi"
+      title="Tax Sales"
+      subtitle="Sales records for tax purposes"
       headerIcon={ShoppingCart}
       cards={[
         { label: "Sales Entry", icon: FilePlus2 },

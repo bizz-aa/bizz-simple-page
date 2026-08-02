@@ -8,7 +8,7 @@ function TaxExpensesHub() {
   return (
     <TaxLayout
       title="Expenses"
-      subtitle="Matumizi yaliyorekodiwa kwa ajili ya kodi"
+      subtitle="Expense records for tax purposes"
       headerIcon={Receipt}
       cards={[
         { label: "Expense Entry", icon: FilePlus2 },
