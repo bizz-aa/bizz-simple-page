@@ -82,8 +82,15 @@ function AuthedLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      <aside className="sticky top-0 hidden h-screen w-96 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+    <div className="relative flex min-h-screen bg-background text-foreground">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${desertSunsetBg})` }}
+      />
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-background/80" />
+      <aside className="sticky top-0 hidden h-screen w-96 flex-col border-r border-sidebar-border bg-sidebar/70 backdrop-blur-xl md:flex">
+
         <div className="flex h-40 items-center justify-center border-b border-sidebar-border px-8 py-8">
           <img
             src="/logo.png"
