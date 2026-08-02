@@ -130,29 +130,28 @@ function Dashboard() {
             {/* Stat cards */}
             <div className="grid grid-cols-3 gap-3 md:gap-4">
               {stats.map((s) => (
-                <div key={s.label} className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                  <s.icon className="h-6 w-6 text-amber-400" />
-                  <p className="mt-3 text-xs text-white/60 md:text-sm">{s.label}</p>
-                  <p className="mt-0.5 font-display text-base font-bold text-amber-400 md:text-lg">{s.value}</p>
+                <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-3">
+                  <s.icon className="h-4 w-4 text-white/45" />
+                  <p className="mt-2 text-[11px] text-white/45 md:text-xs">{s.label}</p>
+                  <p className="mt-0.5 font-display text-sm font-semibold text-white/80 md:text-base">{s.value}</p>
                 </div>
               ))}
             </div>
 
             {/* Quick Actions */}
-            <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3 md:p-4">
-              <div className="grid grid-cols-4 gap-3">
-                {quickActions.map((a) => (
-                  <button
-                    key={a.label}
-                    onClick={a.onClick}
-                    className="flex min-w-0 flex-col items-center gap-2 rounded-xl bg-white/[0.04] px-2 py-5 transition hover:bg-white/[0.08] md:py-7"
-                  >
-                    <a.icon className="h-7 w-7 text-amber-400 md:h-8 md:w-8" />
-                    <span className="max-w-full truncate text-[11px] text-white/85 md:text-sm">{a.label}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="grid grid-cols-4 gap-3">
+              {quickActions.map((a) => (
+                <button
+                  key={a.label}
+                  onClick={a.onClick}
+                  className="group flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-amber-400/40 bg-gradient-to-b from-amber-400/20 to-amber-500/[0.06] px-2 py-6 shadow-[0_6px_24px_-8px_rgba(250,204,21,0.45)] transition hover:-translate-y-0.5 hover:border-amber-400/70 hover:from-amber-400/30 hover:shadow-[0_10px_30px_-8px_rgba(250,204,21,0.6)] md:py-8"
+                >
+                  <a.icon className="h-8 w-8 text-amber-400 transition group-hover:scale-110 md:h-9 md:w-9" />
+                  <span className="max-w-full truncate text-[11px] font-semibold text-white md:text-sm">{a.label}</span>
+                </button>
+              ))}
             </div>
+
           </div>
         </div>
 
