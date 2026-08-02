@@ -6,7 +6,6 @@ import { Search, Plus, UserPlus, ChevronRight, Phone, Mail, LayoutList, LayoutGr
 import { toast } from "sonner";
 import { CrmShell } from "@/components/crm/crm-shell";
 import { TopDrawer, Field, inputCls } from "@/components/crm/top-drawer";
-import { SegmentsPanel } from "@/components/crm/segments-panel";
 
 export const Route = createFileRoute("/_authenticated/m/crm/customers")({
   component: CustomersPage,
@@ -23,7 +22,7 @@ function CustomersPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const search = useSearch({ from: "/_authenticated/m/crm/customers" });
-  const [tab, setTab] = useState<"customers" | "segments">("customers");
+
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
