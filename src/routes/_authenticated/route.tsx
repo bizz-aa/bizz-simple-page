@@ -28,7 +28,7 @@ const MODULES = [
 const HEADINGS: { match: string; title: string; subtitle: string }[] = [
   { match: "/dashboard", title: "Welcome back,", subtitle: "Here's what's happening with your business today." },
   { match: "/m/sales", title: "Sales", subtitle: "Manage orders, quotes and invoices." },
-  { match: "/m/crm", title: "Customers & CRM", subtitle: "Relationships, segments and campaigns." },
+  { match: "/m/crm", title: "Customers & CRM", subtitle: "Relationships and campaigns." },
   { match: "/m/inventory", title: "Inventory", subtitle: "Stock levels, products and movements." },
   { match: "/m/finance", title: "Finance", subtitle: "Cashflow, accounts and expenses." },
   { match: "/m/tax", title: "Tax Management", subtitle: "Independent tax records & compliance." },

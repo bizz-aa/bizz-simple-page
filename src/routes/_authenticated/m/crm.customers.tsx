@@ -6,7 +6,6 @@ import { Search, Plus, UserPlus, ChevronRight, Phone, Mail, LayoutList, LayoutGr
 import { toast } from "sonner";
 import { CrmShell } from "@/components/crm/crm-shell";
 import { TopDrawer, Field, inputCls } from "@/components/crm/top-drawer";
-import { SegmentsPanel } from "@/components/crm/segments-panel";
 
 export const Route = createFileRoute("/_authenticated/m/crm/customers")({
   component: CustomersPage,
@@ -23,7 +22,7 @@ function CustomersPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const search = useSearch({ from: "/_authenticated/m/crm/customers" });
-  const [tab, setTab] = useState<"customers" | "segments">("customers");
+
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -107,25 +106,8 @@ function CustomersPage() {
         </button>
       }
     >
-      {/* Tabs */}
-      <div className="mb-5 flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
-        {(["customers", "segments"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold capitalize transition ${
-              tab === t ? "bg-amber-400 text-black" : "text-white/60 hover:text-white"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      <>
 
-      {tab === "segments" ? (
-        <SegmentsPanel />
-      ) : (
-        <>
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
@@ -214,8 +196,8 @@ function CustomersPage() {
               ))}
             </div>
           )}
-        </>
-      )}
+      </>
+
 
       <TopDrawer
         open={drawerOpen}

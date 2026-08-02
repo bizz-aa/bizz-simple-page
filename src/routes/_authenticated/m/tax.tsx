@@ -16,8 +16,8 @@ function TaxHub() {
       subtitle="Independent tax records & compliance"
       headerIcon={Landmark}
       cards={[
-        { label: "Mauzo ya Risiti", icon: ShoppingCart, to: "/m/tax/sales" },
-        { label: "Manunuzi", icon: ShoppingBag, to: "/m/tax/purchases" },
+        { label: "Tax Sales", icon: ShoppingCart, to: "/m/tax/sales" },
+        { label: "Purchases", icon: ShoppingBag, to: "/m/tax/purchases" },
         { label: "Expenses", icon: Receipt, to: "/m/tax/expenses" },
         { label: "VAT", icon: Percent, to: "/m/tax/vat" },
       ]}

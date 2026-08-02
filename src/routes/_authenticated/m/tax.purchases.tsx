@@ -7,8 +7,8 @@ export const Route = createFileRoute("/_authenticated/m/tax/purchases")({ compon
 function TaxPurchasesHub() {
   return (
     <TaxLayout
-      title="Manunuzi"
-      subtitle="Manunuzi yaliyorekodiwa kwa ajili ya kodi"
+      title="Purchases"
+      subtitle="Purchase records for tax purposes"
       headerIcon={ShoppingBag}
       cards={[
         { label: "Purchase Entry", icon: FilePlus2 },
