@@ -7,6 +7,7 @@ import {
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import desertSunsetBg from "@/assets/desert-sunset-bg.jpg";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -82,7 +83,7 @@ function AuthedLayout() {
   };
 
   return (
-    <div className="relative flex min-h-screen bg-background text-foreground">
+    <div className="relative flex min-h-screen text-foreground">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
