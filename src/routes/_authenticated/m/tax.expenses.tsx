@@ -7,8 +7,8 @@ export const Route = createFileRoute("/_authenticated/m/tax/expenses")({ compone
 function TaxExpensesHub() {
   return (
     <TaxLayout
-      title="Tax Expenses"
-      subtitle="Expenses recorded for tax purposes only"
+      title="Expenses"
+      subtitle="Matumizi yaliyorekodiwa kwa ajili ya kodi"
       headerIcon={Receipt}
       cards={[
         { label: "Expense Entry", icon: FilePlus2 },

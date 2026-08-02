@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import sunsetBg from "@/assets/sunset-bg.jpg";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
@@ -19,6 +18,7 @@ function formatTZS(n: number) {
 function Dashboard() {
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [tab, setTab] = useState("SALES");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: todaySales = 0 } = useQuery({
@@ -29,7 +29,7 @@ function Dashboard() {
         .from("sales")
         .select("total")
         .gte("created_at", start.toISOString());
-      return (data ?? []).reduce((s, r: any) => s + Number(r.total ?? 0), 0);
+      return (data ?? []).reduce((s: number, r: any) => s + Number(r.total ?? 0), 0);
     },
     refetchInterval: 30000,
   });
@@ -58,126 +58,123 @@ function Dashboard() {
     refetchInterval: 30000,
   });
 
-  const tabs: { label: string; to: string; active?: boolean }[] = [
+  const tabs = [
     { label: "SALES", to: "/m/sales" },
     { label: "INVENTORY", to: "/m/inventory" },
     { label: "FINANCE", to: "/m/finance" },
     { label: "EMPLOYEES", to: "/m/employees" },
   ];
 
+  const stats = [
+    { label: "Stock", value: `${lowStock} low`, icon: Package },
+    { label: "Sales", value: String(recentSalesCount), icon: ShoppingCart },
+    { label: "Expenses", value: "—", icon: BarChart3 },
+  ];
+
   const quickActions = [
     { label: "New Sale", icon: ShoppingCart, onClick: () => toast.info("New Sale — coming soon") },
     { label: "Invoice", icon: FileText, onClick: () => toast.info("Invoice — coming soon") },
-    { label: "Customer", icon: Users, onClick: () => toast.info("Customer — coming soon") },
+    { label: "Customer", icon: Users, onClick: () => navigate({ to: "/m/crm/customers" }) },
     { label: "Reports", icon: BarChart3, onClick: () => navigate({ to: "/m/reports" }) },
   ] as const;
 
   return (
-    <div
-      className="relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden text-white"
-      style={{
-        backgroundImage: `linear-gradient(180deg, rgba(14,14,14,0.85) 0%, rgba(14,14,14,0.6) 40%, rgba(14,14,14,0.3) 70%, rgba(14,14,14,0.9) 100%), url(${sunsetBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center bottom",
-      }}
-    >
+    <div className="relative -m-6 min-h-[calc(100vh-4.5rem)] overflow-hidden bg-[#0a0a0a] text-white">
       <style>{`
-        @keyframes goldGlow {
-          0%, 100% { 
-            box-shadow: 0 0 40px rgba(218, 165, 32, 0.4), inset 0 0 20px rgba(218, 165, 32, 0.1);
-            transform: scale(1);
-          }
-          50% { 
-            box-shadow: 0 0 60px rgba(218, 165, 32, 0.6), inset 0 0 30px rgba(218, 165, 32, 0.2);
-            transform: scale(1.02);
-          }
-        }
+        @keyframes goldSpin { to { transform: rotate(360deg); } }
         .gold-ring {
-          animation: goldGlow 3s ease-in-out infinite;
-          background: conic-gradient(from 0deg, #8B4513, #FFD700, #DAA520, #8B4513);
+          background: conic-gradient(from 200deg, rgba(255,255,255,0.04) 0deg, #DAA520 40deg, #FFD700 150deg, #B8860B 260deg, rgba(255,255,255,0.04) 330deg);
+          filter: drop-shadow(0 0 35px rgba(218,165,32,0.35));
+          animation: goldSpin 14s linear infinite;
         }
       `}</style>
-      <div className="mx-auto w-full max-w-md px-4 pb-28 pt-3 md:max-w-7xl md:px-10 md:pb-12 md:pt-4">
-        {/* Header */}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <div className="min-w-0" />
-          <div className="flex shrink-0 gap-2">
-            <button className="h-9 w-9 rounded-full bg-white/10 backdrop-blur" aria-label="notifications" />
-            <button className="h-9 w-9 rounded-full bg-white/10 backdrop-blur" aria-label="profile" />
-          </div>
-        </div>
 
+      <div className="mx-auto w-full max-w-md px-4 pb-28 pt-4 md:max-w-6xl md:px-8 md:pb-12 md:pt-6">
         {/* Tabs */}
-        <div className="mt-4 grid grid-cols-4 items-center gap-1 rounded-full border border-white/10 bg-black/15 p-1 text-center text-[10px] sm:text-xs md:mt-5 md:flex md:w-full md:items-center md:justify-between md:gap-3 md:rounded-full md:border md:border-white/15 md:bg-white/10 md:px-3 md:py-2 md:backdrop-blur-xl md:text-sm">
-          {tabs.map((t) =>
-            t.active ? (
-              <span key={t.label} className="min-w-0 truncate rounded-full border border-white/30 bg-white/20 px-2 py-2 font-semibold text-white shadow-lg shadow-white/20 backdrop-blur-xl md:flex md:flex-1 md:items-center md:justify-center md:px-4 md:py-2">
+        <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/8 bg-white/[0.03] p-1.5 text-center text-[10px] sm:text-xs md:text-sm">
+          {tabs.map((t) => {
+            const active = tab === t.label;
+            return (
+              <button
+                key={t.label}
+                onClick={() => { setTab(t.label); navigate({ to: t.to as any }); }}
+                className={`relative min-w-0 truncate rounded-xl px-2 py-2.5 font-semibold tracking-wide transition md:py-3 ${
+                  active ? "text-amber-400" : "text-white/55 hover:text-white/85"
+                }`}
+              >
                 {t.label}
-              </span>
-            ) : (
-              <button key={t.label} onClick={() => navigate({ to: t.to as any })} className="min-w-0 truncate rounded-full px-1 py-2 font-semibold text-white/55 hover:text-white/80 md:flex md:flex-1 md:items-center md:justify-center md:px-4 md:py-2 md:font-normal">
-                {t.label}
+                {active && (
+                  <span className="absolute inset-x-4 -bottom-0.5 h-0.5 rounded-full bg-amber-400 shadow-[0_0_12px_2px_rgba(250,204,21,0.6)]" />
+                )}
               </button>
-            )
-          )}
+            );
+          })}
         </div>
 
-        <div className="md:grid md:grid-cols-2 md:gap-10 md:items-start">
+        <div className="mt-6 grid gap-5 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-8">
           {/* Circular ring */}
-          <div className="mt-5 md:mt-6 flex justify-center">
-            <div className="relative grid h-56 w-56 md:h-72 md:w-72 place-items-center">
-              <div className="gold-ring absolute inset-0 rounded-full border-[6px]" />
-              <div className="absolute inset-6 rounded-full border border-white/10 bg-black/60 backdrop-blur" />
+          <div className="flex justify-center">
+            <div className="relative grid h-60 w-60 md:h-72 md:w-72 place-items-center">
+              <div className="gold-ring absolute inset-0 rounded-full" />
+              <div className="absolute inset-[14px] rounded-full bg-[#111111]" />
+              <div className="absolute inset-[26px] rounded-full bg-[#0d0d0d] shadow-[inset_0_0_50px_rgba(218,165,32,0.15)]" />
               <div className="relative text-center">
-                <p className="text-xs uppercase tracking-widest text-white/50">Today Sales</p>
-                <p className="mt-2 font-display text-2xl font-bold">TZS</p>
-                <p className="font-display text-3xl md:text-4xl font-bold text-yellow-400">{formatTZS(Number(todaySales))}</p>
+                <p className="text-[11px] uppercase tracking-[0.25em] text-white/45">Today Sales</p>
+                <p className="mt-3 font-display text-2xl font-bold text-white">TZS</p>
+                <p className="font-display text-4xl font-bold text-amber-400">{formatTZS(Number(todaySales))}</p>
               </div>
             </div>
           </div>
 
-          <div>
-            {/* Indicators */}
-            <div className="mt-6 md:mt-8 grid grid-cols-3 text-center text-xs md:text-sm">
-              <div>
-                <p className="text-white/60">Stock</p>
-                <p className="mt-1 font-semibold text-white">{lowStock} low</p>
-              </div>
-              <div>
-                <p className="text-white/60">Sales</p>
-                <p className="mt-1 font-semibold text-white">{recentSalesCount}</p>
-              </div>
-              <div>
-                <p className="text-white/60">Expenses</p>
-                <p className="mt-1 font-semibold text-white">—</p>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mt-6 grid grid-cols-4 gap-2 md:gap-5">
-              {quickActions.map((a) => (
-                <button
-                  key={a.label}
-                  onClick={a.onClick}
-                  className="flex min-w-0 flex-col items-center gap-2 md:gap-3"
-                >
-                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-400/15 backdrop-blur transition hover:bg-amber-400/25 sm:h-16 sm:w-16 md:h-20 md:w-20">
-                    <a.icon className="h-6 w-6 md:h-8 md:w-8 text-amber-400" />
-                  </div>
-                  <span className="max-w-full truncate text-[10px] text-white/70 sm:text-[11px] md:text-xs">{a.label}</span>
-                </button>
+          <div className="space-y-5">
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 gap-3 md:gap-4">
+              {stats.map((s) => (
+                <div key={s.label} className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                  <s.icon className="h-6 w-6 text-amber-400" />
+                  <p className="mt-3 text-xs text-white/60 md:text-sm">{s.label}</p>
+                  <p className="mt-0.5 font-display text-base font-bold text-amber-400 md:text-lg">{s.value}</p>
+                </div>
               ))}
             </div>
 
-            {/* Recent activity card */}
-            <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur">
-              <h3 className="font-display text-base md:text-lg font-bold text-white">Recent Activity</h3>
-              <ul className="mt-3 space-y-2 text-sm text-white/70">
-                <li>• {recentSalesCount} Sales Completed today</li>
-                <li>• {lowStock} Low Stock Alerts</li>
-              </ul>
+            {/* Quick Actions */}
+            <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3 md:p-4">
+              <div className="grid grid-cols-4 gap-3">
+                {quickActions.map((a) => (
+                  <button
+                    key={a.label}
+                    onClick={a.onClick}
+                    className="flex min-w-0 flex-col items-center gap-2 rounded-xl bg-white/[0.04] px-2 py-5 transition hover:bg-white/[0.08] md:py-7"
+                  >
+                    <a.icon className="h-7 w-7 text-amber-400 md:h-8 md:w-8" />
+                    <span className="max-w-full truncate text-[11px] text-white/85 md:text-sm">{a.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Recent activity */}
+        <div className="mt-5 rounded-2xl border border-white/8 bg-white/[0.03] p-5 md:p-6">
+          <h3 className="inline-block border-b-2 border-amber-400 pb-1 font-display text-base font-bold text-white md:text-lg">
+            Recent Activity
+          </h3>
+          <ul className="mt-5 space-y-4 text-sm text-white/75">
+            <li className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-400/10">
+                <ShoppingCart className="h-4 w-4 text-amber-400" />
+              </span>
+              {recentSalesCount} Sales Completed today
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-400/10">
+                <Package className="h-4 w-4 text-amber-400" />
+              </span>
+              {lowStock} Low Stock Alerts
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -196,10 +193,10 @@ function Dashboard() {
       />
 
       {/* Bottom Nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-black/70 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-black/80 backdrop-blur-xl md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
           <BottomBtn label="Home" active icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
-          <BottomBtn label="Stock" icon={Package} onClick={() => toast.info("Stock — coming soon")} />
+          <BottomBtn label="Stock" icon={Package} onClick={() => navigate({ to: "/m/inventory" })} />
           <BottomBtn label="Add" icon={Camera} big onClick={() => fileRef.current?.click()} />
           <BottomBtn label="Tax" icon={Landmark} onClick={() => navigate({ to: "/m/tax" })} />
           <BottomBtn label="More" icon={MoreHorizontal} onClick={() => setMoreOpen(true)} />
