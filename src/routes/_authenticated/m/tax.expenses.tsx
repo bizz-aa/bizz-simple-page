@@ -1,109 +1,155 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Receipt, FilePlus2, Tags, Paperclip, BarChart3, BadgeCheck, CircleDollarSign, ScanLine, Sparkles } from "lucide-react";
-import { TaxLayout } from "@/components/tax-layout";
-import { useTaxModule, formatCurrency } from "@/components/tax-module-provider";
-import { TaxDataTable } from "@/components/tax-data-table";
-import { ExpenseForm } from "@/components/tax-forms";
-import { EmptyState, InsightPanel, MetricCard, ProgressBar, StatusPill } from "@/components/tax-workspace-ui";
+import { Receipt, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useTaxModule, formatCurrency, type ExpenseRecord } from "@/components/tax-module-provider";
+import { RecordDialog, ConfirmDialog, bool, num, str, type FieldValue } from "@/components/tax/record-dialog";
+import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
-export const Route = createFileRoute("/_authenticated/m/tax/expenses")({ component: TaxExpensesHub });
+export const Route = createFileRoute("/_authenticated/m/tax/expenses")({ component: ExpensesPage });
 
-function TaxExpensesHub() {
-  const { expenses, addExpense, updateExpense, deleteExpense, metrics } = useTaxModule();
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<number | null>(null);
-  const current = expenses.find((item) => item.id === editing);
+function ExpensesPage() {
+  const { expenses, saveExpense, deleteExpense, metrics } = useTaxModule();
+  const [editing, setEditing] = useState<ExpenseRecord | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [detail, setDetail] = useState<ExpenseRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ExpenseRecord | null>(null);
+
+  const openCreate = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (row: ExpenseRecord) => { setEditing(row); setFormOpen(true); };
+
+  const submit = (value: Record<string, FieldValue>) => {
+    saveExpense(
+      {
+        name: str(value.name),
+        category: str(value.category),
+        date: str(value.date),
+        amount: num(value.amount),
+        deductible: bool(value.deductible),
+        receipt: bool(value.receipt),
+        status: str(value.status) as ExpenseRecord["status"],
+      },
+      editing?.id,
+    );
+    toast.success(editing ? "Expense updated" : "Expense created");
+  };
 
   return (
-    <TaxLayout
+    <TaxWorkspace
       title="Expenses"
-      subtitle="Deductible expense tracking and review"
-      headerIcon={Receipt}
-      cards={[
-        { label: "Expense Entry", icon: FilePlus2 },
-        { label: "Categories", icon: Tags },
-        { label: "Receipts", icon: Paperclip },
-        { label: "Tax Savings", icon: CircleDollarSign },
-      ]}
-      sections={[
-        {
-          title: "Expense Controls",
-          icon: Receipt,
-          items: [
-            { label: "Expense Entry", icon: FilePlus2 },
-            { label: "Expense Categories", icon: Tags },
-            { label: "Supporting Documents", icon: Paperclip },
-            { label: "Expense Summary", icon: BarChart3 },
-          ],
-        },
-      ]}
+      subtitle="Deductible business expenses and receipts"
+      icon={Receipt}
+      actions={
+        <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
+          <Plus className="mr-1.5 h-4 w-4" /> New expense
+        </Button>
+      }
     >
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <InsightPanel title="Deductible Expense Review" icon={BadgeCheck} tone="emerald" action={<StatusPill label="Optimized" tone="emerald" />}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <MetricCard label="Deductible" value={formatCurrency(metrics.deductibleExpenses)} tone="emerald" />
-            <MetricCard label="Non-Deductible" value={formatCurrency(metrics.expenseTotal - metrics.deductibleExpenses)} tone="amber" />
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <ProgressBar label="Receipt completeness" value={79} tone="emerald" />
-          </div>
-        </InsightPanel>
-
-        <InsightPanel title="Tax Saving Opportunities" icon={Sparkles} tone="violet">
-          <MetricCard label="Potential savings" value={formatCurrency(metrics.deductibleExpenses * 0.3)} tone="violet" />
-          <MetricCard label="Pending review" value={expenses.filter((item) => item.status === "Pending").length.toString()} tone="amber" />
-          <MetricCard label="Receipts ready" value={expenses.filter((item) => item.receipt).length.toString()} tone="slate" />
-        </InsightPanel>
-      </div>
-
-      <div className="mt-6">
-        <TaxDataTable
-          title="Expense register"
-          rows={expenses}
-          columns={[
-            { key: "description", label: "Description" },
-            { key: "category", label: "Category" },
-            { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
-            { key: "deductible", label: "Deductible", render: (row) => (row.deductible ? "Yes" : "No") },
-            { key: "receipt", label: "Receipt", render: (row) => (row.receipt ? "Yes" : "No") },
-            { key: "status", label: "Status" },
-          ]}
-          onAdd={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
-          onEdit={(row) => {
-            setEditing(row.id);
-            setShowForm(true);
-          }}
-          onDelete={(row) => deleteExpense(row.id)}
-          emptyText="No expenses yet. Add the first expense to track tax-deductible spend and supporting evidence."
-          emptyActionLabel="Add expense"
-        />
-      </div>
-
-      <div className="mt-6">
-        <EmptyState title="Expenses workspace is ready" description="Record expenses and receipts to expose deductibility, approval gaps, and tax saving opportunities." icon={Receipt} />
-      </div>
-
-      <ExpenseForm
-        open={showForm}
-        initialValue={current ? { description: current.description, category: current.category, amount: current.amount, deductible: current.deductible, receipt: current.receipt, status: current.status } : undefined}
-        onSave={(value) => {
-          if (editing) {
-            updateExpense(editing, value);
-          } else {
-            addExpense(value);
-          }
-          setShowForm(false);
-          setEditing(null);
-        }}
-        onClose={() => {
-          setShowForm(false);
-          setEditing(null);
-        }}
+      <SummaryStrip
+        items={[
+          { label: "Total Expenses", value: formatCurrency(metrics.expenseTotal), hint: `${expenses.length} records`, accent: true },
+          { label: "Deductible", value: formatCurrency(metrics.deductibleExpense), hint: "Reduces taxable profit" },
+          { label: "With Receipt", value: `${expenses.filter((row) => row.receipt).length}/${expenses.length || 0}`, hint: "Evidence attached" },
+          { label: "Pending", value: String(expenses.filter((row) => row.status === "Pending").length), hint: "Awaiting approval" },
+        ]}
       />
-    </TaxLayout>
+
+      <TaxTable
+        rows={expenses}
+        searchKeys={(row) => `${row.name} ${row.category} ${row.date} ${row.status}`}
+        filter={{
+          label: "Filter",
+          options: [
+            { value: "deductible", label: "Deductible" },
+            { value: "non-deductible", label: "Non-deductible" },
+            { value: "no-receipt", label: "No receipt" },
+            { value: "Approved", label: "Approved" },
+            { value: "Pending", label: "Pending" },
+          ],
+          match: (row, value) =>
+            value === "deductible" ? row.deductible
+              : value === "non-deductible" ? !row.deductible
+              : value === "no-receipt" ? !row.receipt
+              : row.status === value,
+        }}
+        columns={[
+          { key: "name", label: "Expense", render: (row) => <span className="font-medium text-white">{row.name}</span> },
+          { key: "category", label: "Category" },
+          { key: "date", label: "Date", hideOnMobile: true },
+          { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
+          { key: "deductible", label: "Deductible", hideOnMobile: true, render: (row) => (row.deductible ? "Yes" : "No") },
+          { key: "receipt", label: "Receipt", hideOnMobile: true, render: (row) => (row.receipt ? "Attached" : <span className="text-white/40">Missing</span>) },
+          { key: "status", label: "Status", render: (row) => <StatusBadge value={row.status} /> },
+        ]}
+        onRowClick={setDetail}
+        onEdit={openEdit}
+        onDelete={setPendingDelete}
+        onExport={(rows) =>
+          exportCsv(
+            "tax-expenses.csv",
+            ["Expense", "Category", "Date", "Amount", "Deductible", "Receipt", "Status"],
+            rows.map((row) => [row.name, row.category, row.date, row.amount, row.deductible ? "Yes" : "No", row.receipt ? "Yes" : "No", row.status]),
+          )
+        }
+        addLabel="New expense"
+        onAdd={openCreate}
+        empty={{ title: "No expenses recorded", description: "Log business expenses to reduce your taxable profit.", icon: Receipt }}
+      />
+
+      <RecordDialog
+        open={formOpen}
+        title={editing ? "Edit expense" : "New expense"}
+        description="Record the expense, category and receipt status."
+        submitLabel={editing ? "Update" : "Create"}
+        initialValue={editing ? { ...editing } : null}
+        onClose={() => setFormOpen(false)}
+        onSubmit={submit}
+        fields={[
+          { name: "name", label: "Expense", type: "text", required: true, half: true },
+          { name: "category", label: "Category", type: "select", options: ["Rent", "Salaries", "Utilities", "Transport", "Marketing", "Office", "Other"], half: true },
+          { name: "date", label: "Date", type: "date", required: true, half: true },
+          { name: "amount", label: "Amount", type: "number", required: true, half: true },
+          { name: "status", label: "Status", type: "select", options: ["Approved", "Pending"], half: true },
+          { name: "deductible", label: "Tax deductible", type: "switch", defaultValue: true, half: true },
+          { name: "receipt", label: "Receipt attached", type: "switch", half: true },
+        ]}
+      />
+
+      <DetailsDrawer
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail?.name ?? ""}
+        description="Expense details"
+        rows={
+          detail
+            ? [
+                { label: "Category", value: detail.category },
+                { label: "Date", value: detail.date },
+                { label: "Amount", value: formatCurrency(detail.amount) },
+                { label: "Deductible", value: detail.deductible ? "Yes" : "No" },
+                { label: "Receipt", value: detail.receipt ? "Attached" : "Missing" },
+                { label: "Status", value: <StatusBadge value={detail.status} /> },
+              ]
+            : []
+        }
+        footer={
+          detail ? (
+            <>
+              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Edit</Button>
+              <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
+            </>
+          ) : null
+        }
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete expense"
+        description={`${pendingDelete?.name ?? ""} will be removed from your expense register.`}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => { if (pendingDelete) { deleteExpense(pendingDelete.id); toast.success("Expense deleted"); } }}
+      />
+    </TaxWorkspace>
   );
 }
