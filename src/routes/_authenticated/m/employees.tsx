@@ -5,7 +5,6 @@ import {
   FileBarChart, BarChart3, Award, ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
-import sunsetBg from "@/assets/sunset-bg.jpg";
 
 export const Route = createFileRoute("/_authenticated/m/employees")({ component: EmployeesHub });
 
@@ -107,7 +106,7 @@ function EmployeesHub() {
         </button>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
           <BottomBtn label="Home" icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
           <BottomBtn label="Sales" icon={ShoppingCart} onClick={() => navigate({ to: "/m/sales" })} />

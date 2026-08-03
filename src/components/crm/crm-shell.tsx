@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, Home, Package, Scan, Landmark, MoreHorizontal } from "lucide-react";
 import type { ReactNode } from "react";
-import sunsetBg from "@/assets/sunset-bg.jpg";
 
 export function CrmShell({
   title,
@@ -22,14 +21,6 @@ export function CrmShell({
   return (
     <div
       className="relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden text-white"
-      style={
-        plain
-          ? { backgroundColor: "#0a0a0a" }
-          : {
-              backgroundImage: `linear-gradient(180deg, rgba(14,14,14,0.9) 0%, rgba(14,14,14,0.75) 45%, rgba(14,14,14,0.6) 72%, rgba(14,14,14,0.95) 100%), url(${sunsetBg})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center bottom",
-            }
       }
     >
 
@@ -66,7 +57,7 @@ export function CrmShell({
         <div className="mt-5 md:mt-8">{children}</div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
           <BottomBtn label="Home" icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
           <BottomBtn label="Stock" icon={Package} onClick={() => navigate({ to: "/m/inventory" })} />
