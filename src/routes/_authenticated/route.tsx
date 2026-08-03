@@ -27,7 +27,7 @@ const MODULES = [
 ] as const;
 
 const HEADINGS: { match: string; title: string; subtitle: string }[] = [
-  { match: "/dashboard", title: "Welcome back,", subtitle: "Here's what's happening with your business today." },
+  { match: "/dashboard", title: "Welcome back,", subtitle: "Simplify your business." },
   { match: "/m/sales", title: "Sales", subtitle: "Manage orders, quotes and invoices." },
   { match: "/m/crm", title: "Customers & CRM", subtitle: "Relationships and campaigns." },
   { match: "/m/inventory", title: "Inventory", subtitle: "Stock levels, products and movements." },
@@ -86,11 +86,11 @@ function AuthedLayout() {
     <div className="relative flex min-h-screen text-foreground">
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${desertSunsetBg})` }}
+        className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-cover bg-[center_left] bg-no-repeat md:left-96"
+        style={{ backgroundImage: `url(${desertSunsetBg})`, backgroundAttachment: "scroll" }}
       />
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-background/65" />
-      <aside className="sticky top-0 hidden h-screen w-96 flex-col border-r border-sidebar-border bg-sidebar/70 backdrop-blur-xl md:flex">
+      <div aria-hidden className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-gradient-to-b from-black/35 via-black/45 to-black/65 md:left-96" />
+      <aside className="relative z-10 sticky top-0 hidden h-screen w-96 flex-col border-r border-sidebar-border bg-sidebar backdrop-blur-xl md:flex">
 
         <div className="flex h-40 items-center justify-center border-b border-sidebar-border px-8 py-8">
           <img
@@ -132,8 +132,8 @@ function AuthedLayout() {
         </nav>
       </aside>
 
-      <div className="flex h-screen flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0a]/90 px-6 py-4 backdrop-blur">
+      <div className="relative z-10 flex h-screen flex-1 flex-col overflow-y-auto">
+        <header className="sticky top-0 z-50 border-b border-white/5 bg-black/40 px-4 py-4 backdrop-blur-xl md:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="truncate font-display text-xl font-bold tracking-tight text-white md:text-2xl">
@@ -168,7 +168,7 @@ function AuthedLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden px-6 pb-6 pt-8">
+        <main className="flex-1 overflow-x-hidden px-3 pb-6 pt-6 sm:px-6 sm:pt-8">
           <div key={pathname} className="page-transition">
             <Outlet />
           </div>

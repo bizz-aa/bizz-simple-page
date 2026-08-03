@@ -79,7 +79,7 @@ function Dashboard() {
   ] as const;
 
   return (
-    <div className="relative -m-6 min-h-[calc(100vh-4.5rem)] overflow-hidden bg-[#0a0a0a] text-white">
+    <div className="relative -mx-3 -mt-6 min-h-[calc(100vh-4.5rem)] overflow-hidden text-white sm:-mx-6">
       <style>{`
         @keyframes goldSpin { to { transform: rotate(360deg); } }
         .gold-ring {
@@ -89,7 +89,7 @@ function Dashboard() {
         }
       `}</style>
 
-      <div className="mx-auto w-full max-w-md px-4 pb-28 pt-4 md:max-w-6xl md:px-8 md:pb-12 md:pt-6">
+      <div className="mx-auto w-full max-w-md px-3 pb-28 pt-4 sm:px-4 md:max-w-6xl md:px-8 md:pb-12 md:pt-6">
         {/* Tabs */}
         <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/8 bg-white/[0.03] p-1.5 text-center text-[10px] sm:text-xs md:text-sm">
           {tabs.map((t) => {
@@ -111,17 +111,17 @@ function Dashboard() {
           })}
         </div>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-8">
+        <div className="mt-6 grid min-w-0 gap-5 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-8">
           {/* Circular ring */}
           <div className="flex justify-center">
-            <div className="relative grid h-60 w-60 md:h-72 md:w-72 place-items-center">
+            <div className="relative grid h-48 w-48 sm:h-60 sm:w-60 md:h-72 md:w-72 place-items-center">
               <div className="gold-ring absolute inset-0 rounded-full" />
-              <div className="absolute inset-[14px] rounded-full bg-[#111111]" />
-              <div className="absolute inset-[26px] rounded-full bg-[#0d0d0d] shadow-[inset_0_0_50px_rgba(218,165,32,0.15)]" />
+              <div className="absolute inset-[14px] rounded-full bg-[#111111]/90" />
+              <div className="absolute inset-[26px] rounded-full bg-[#0d0d0d]/90 shadow-[inset_0_0_50px_rgba(218,165,32,0.15)]" />
               <div className="relative text-center">
                 <p className="text-[11px] uppercase tracking-[0.25em] text-white/45">Today Sales</p>
                 <p className="mt-3 font-display text-2xl font-bold text-white">TZS</p>
-                <p className="font-display text-4xl font-bold text-amber-400">{formatTZS(Number(todaySales))}</p>
+                <p className="font-display text-3xl font-bold text-amber-400 sm:text-4xl">{formatTZS(Number(todaySales))}</p>
               </div>
             </div>
           </div>
@@ -139,7 +139,7 @@ function Dashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {quickActions.map((a) => (
                 <button
                   key={a.label}

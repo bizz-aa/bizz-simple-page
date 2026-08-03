@@ -81,7 +81,7 @@ function AnalyticsPage() {
   const trendDays = Array.from({ length: 15 }, (_, i) => i);
 
   return (
-    <div className="relative -m-6 min-h-[calc(100vh-4.5rem)] bg-[#0a0a0a] px-4 pb-12 pt-4 text-white md:px-8 md:pt-6">
+    <div className="relative -mx-3 -mt-6 min-h-[calc(100vh-4.5rem)] px-3 pb-12 pt-4 text-white sm:-mx-6 sm:px-4 md:px-8 md:pt-6">
       {/* Page header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex min-w-0 items-center gap-3">
