@@ -22,7 +22,7 @@ function ExpensesPage() {
   const submit = (value: Record<string, FieldValue>) => {
     saveExpense(
       {
-        name: str(value.name),
+        description: str(value.description),
         category: str(value.category),
         date: str(value.date),
         amount: num(value.amount),
@@ -49,7 +49,7 @@ function ExpensesPage() {
       <SummaryStrip
         items={[
           { label: "Total Expenses", value: formatCurrency(metrics.expenseTotal), hint: `${expenses.length} records`, accent: true },
-          { label: "Deductible", value: formatCurrency(metrics.deductibleExpense), hint: "Reduces taxable profit" },
+          { label: "Deductible", value: formatCurrency(metrics.deductibleExpenses), hint: "Reduces taxable profit" },
           { label: "With Receipt", value: `${expenses.filter((row) => row.receipt).length}/${expenses.length || 0}`, hint: "Evidence attached" },
           { label: "Pending", value: String(expenses.filter((row) => row.status === "Pending").length), hint: "Awaiting approval" },
         ]}
@@ -57,7 +57,7 @@ function ExpensesPage() {
 
       <TaxTable
         rows={expenses}
-        searchKeys={(row) => `${row.name} ${row.category} ${row.date} ${row.status}`}
+        searchKeys={(row) => `${row.description} ${row.category} ${row.date} ${row.status}`}
         filter={{
           label: "Filter",
           options: [
@@ -74,7 +74,7 @@ function ExpensesPage() {
               : row.status === value,
         }}
         columns={[
-          { key: "name", label: "Expense", render: (row) => <span className="font-medium text-white">{row.name}</span> },
+          { key: "description", label: "Expense", render: (row) => <span className="font-medium text-white">{row.description}</span> },
           { key: "category", label: "Category" },
           { key: "date", label: "Date", hideOnMobile: true },
           { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
@@ -89,7 +89,7 @@ function ExpensesPage() {
           exportCsv(
             "tax-expenses.csv",
             ["Expense", "Category", "Date", "Amount", "Deductible", "Receipt", "Status"],
-            rows.map((row) => [row.name, row.category, row.date, row.amount, row.deductible ? "Yes" : "No", row.receipt ? "Yes" : "No", row.status]),
+            rows.map((row) => [row.description, row.category, row.date, row.amount, row.deductible ? "Yes" : "No", row.receipt ? "Yes" : "No", row.status]),
           )
         }
         addLabel="New expense"
@@ -106,7 +106,7 @@ function ExpensesPage() {
         onClose={() => setFormOpen(false)}
         onSubmit={submit}
         fields={[
-          { name: "name", label: "Expense", type: "text", required: true, half: true },
+          { name: "description", label: "Expense", type: "text", required: true, half: true },
           { name: "category", label: "Category", type: "select", options: ["Rent", "Salaries", "Utilities", "Transport", "Marketing", "Office", "Other"], half: true },
           { name: "date", label: "Date", type: "date", required: true, half: true },
           { name: "amount", label: "Amount", type: "number", required: true, half: true },
@@ -119,7 +119,7 @@ function ExpensesPage() {
       <DetailsDrawer
         open={Boolean(detail)}
         onClose={() => setDetail(null)}
-        title={detail?.name ?? ""}
+        title={detail?.description ?? ""}
         description="Expense details"
         rows={
           detail
@@ -146,7 +146,7 @@ function ExpensesPage() {
       <ConfirmDialog
         open={Boolean(pendingDelete)}
         title="Delete expense"
-        description={`${pendingDelete?.name ?? ""} will be removed from your expense register.`}
+        description={`${pendingDelete?.description ?? ""} will be removed from your expense register.`}
         onClose={() => setPendingDelete(null)}
         onConfirm={() => { if (pendingDelete) { deleteExpense(pendingDelete.id); toast.success("Expense deleted"); } }}
       />
