@@ -1,83 +1,155 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Building2, FilePlus2, TrendingDown, BarChart3, FolderArchive, BadgeCheck, CircleDollarSign, Sparkles, Boxes } from "lucide-react";
-import { TaxLayout } from "@/components/tax-layout";
-import { useTaxModule, formatCurrency } from "@/components/tax-module-provider";
-import { TaxDataTable } from "@/components/tax-data-table";
-import { AssetForm } from "@/components/tax-forms";
-import { EmptyState, InsightPanel, MetricCard, ProgressBar, StatusPill } from "@/components/tax-workspace-ui";
+import { Building2, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useTaxModule, formatCurrency, type AssetRecord } from "@/components/tax-module-provider";
+import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
+import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
-export const Route = createFileRoute("/_authenticated/m/tax/assets")({ component: AssetsHub });
+export const Route = createFileRoute("/_authenticated/m/tax/assets")({ component: AssetsPage });
 
-function AssetsHub() {
-  const { assets, addAsset } = useTaxModule();
-  const [showForm, setShowForm] = useState(false);
+function AssetsPage() {
+  const { assets, saveAsset, deleteAsset } = useTaxModule();
+  const [editing, setEditing] = useState<AssetRecord | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [detail, setDetail] = useState<AssetRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<AssetRecord | null>(null);
+
+  const openCreate = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (row: AssetRecord) => { setEditing(row); setFormOpen(true); };
+
+  const purchaseValue = assets.reduce((sum, row) => sum + row.purchaseValue, 0);
+  const bookValue = assets.reduce((sum, row) => sum + row.currentValue, 0);
+  const depreciation = assets.reduce((sum, row) => sum + row.depreciation, 0);
+
+  const submit = (value: Record<string, FieldValue>) => {
+    saveAsset(
+      {
+        name: str(value.name),
+        category: str(value.category),
+        purchaseDate: str(value.purchaseDate),
+        purchaseValue: num(value.purchaseValue),
+        currentValue: num(value.currentValue),
+        depreciation: num(value.depreciation),
+        usefulLife: num(value.usefulLife),
+        status: str(value.status) as AssetRecord["status"],
+      },
+      editing?.id,
+    );
+    toast.success(editing ? "Asset updated" : "Asset created");
+  };
 
   return (
-    <TaxLayout
+    <TaxWorkspace
       title="Capital Assets"
-      subtitle="Tax depreciation and capital allowance view"
-      headerIcon={Building2}
-      cards={[
-        { label: "Add Asset", icon: FilePlus2 },
-        { label: "Register", icon: FolderArchive },
-        { label: "Depreciation", icon: TrendingDown },
-        { label: "Allowance", icon: CircleDollarSign },
-      ]}
-      sections={[
-        {
-          title: "Asset Controls",
-          icon: Building2,
-          items: [
-            { label: "Asset Register", icon: FolderArchive },
-            { label: "Depreciation Schedule", icon: TrendingDown },
-            { label: "Capital Allowance", icon: CircleDollarSign },
-            { label: "Asset Reports", icon: BarChart3 },
-          ],
-        },
-      ]}
+      subtitle="Depreciation, capital allowance and tax benefit"
+      icon={Building2}
+      actions={
+        <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
+          <Plus className="mr-1.5 h-4 w-4" /> New asset
+        </Button>
+      }
     >
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <InsightPanel title="Asset Performance" icon={BadgeCheck} tone="emerald" action={<StatusPill label="Healthy" tone="emerald" />}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <MetricCard label="Total Assets" value={assets.length.toString()} hint="Active register" tone="emerald" />
-            <MetricCard label="Capital Allowance" value={formatCurrency(assets.reduce((sum, item) => sum + item.depreciation, 0))} hint="Available benefit" tone="blue" />
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <ProgressBar label="Depreciation coverage" value={87} tone="emerald" />
-          </div>
-        </InsightPanel>
+      <SummaryStrip
+        items={[
+          { label: "Purchase Value", value: formatCurrency(purchaseValue), hint: `${assets.length} assets`, accent: true },
+          { label: "Book Value", value: formatCurrency(bookValue), hint: "Current net value" },
+          { label: "Depreciation", value: formatCurrency(depreciation), hint: "Capital allowance" },
+          { label: "Tax Benefit", value: formatCurrency(depreciation * 0.3), hint: "At 30% tax rate" },
+        ]}
+      />
 
-        <InsightPanel title="Tax Benefit" icon={Sparkles} tone="violet">
-          <MetricCard label="Purchase value" value={formatCurrency(assets.reduce((sum, item) => sum + item.purchaseValue, 0))} hint="Gross asset base" tone="violet" />
-          <MetricCard label="Current value" value={formatCurrency(assets.reduce((sum, item) => sum + item.currentValue, 0))} hint="Net book value" tone="amber" />
-          <MetricCard label="Remaining life" value={`${Math.round(assets.reduce((sum, item) => sum + item.usefulLife, 0) / assets.length)} years`} hint="Average useful life" tone="slate" />
-        </InsightPanel>
-      </div>
+      <TaxTable
+        rows={assets}
+        searchKeys={(row) => `${row.name} ${row.category} ${row.status}`}
+        filter={{
+          label: "Status",
+          options: [
+            { value: "Active", label: "Active" },
+            { value: "Disposed", label: "Disposed" },
+          ],
+          match: (row, value) => row.status === value,
+        }}
+        columns={[
+          { key: "name", label: "Asset", render: (row) => <span className="font-medium text-white">{row.name}</span> },
+          { key: "category", label: "Category", hideOnMobile: true },
+          { key: "purchaseValue", label: "Purchase", render: (row) => formatCurrency(row.purchaseValue) },
+          { key: "depreciation", label: "Depreciation", render: (row) => formatCurrency(row.depreciation), hideOnMobile: true },
+          { key: "currentValue", label: "Book value", render: (row) => formatCurrency(row.currentValue) },
+          { key: "status", label: "Status", render: (row) => <StatusBadge value={row.status} /> },
+        ]}
+        onRowClick={setDetail}
+        onEdit={openEdit}
+        onDelete={setPendingDelete}
+        onExport={(rows) =>
+          exportCsv(
+            "capital-assets.csv",
+            ["Asset", "Category", "Purchase date", "Purchase value", "Depreciation", "Book value", "Useful life", "Status"],
+            rows.map((row) => [row.name, row.category, row.purchaseDate, row.purchaseValue, row.depreciation, row.currentValue, row.usefulLife, row.status]),
+          )
+        }
+        addLabel="New asset"
+        onAdd={openCreate}
+        empty={{ title: "No assets registered", description: "Add capital assets to track depreciation and allowances.", icon: Building2 }}
+      />
 
-      <div className="mt-6">
-        <TaxDataTable
-          title="Asset register"
-          rows={assets}
-          columns={[
-            { key: "name", label: "Name" },
-            { key: "category", label: "Category" },
-            { key: "purchaseValue", label: "Purchase Value", render: (row) => formatCurrency(row.purchaseValue) },
-            { key: "currentValue", label: "Current Value", render: (row) => formatCurrency(row.currentValue) },
-            { key: "depreciation", label: "Depreciation", render: (row) => formatCurrency(row.depreciation) },
-            { key: "status", label: "Status" },
-          ]}
-          onAdd={() => setShowForm(true)}
-          emptyText="No assets yet. Add your first asset to track depreciation and capital allowance."
-          emptyActionLabel="Add asset"
-        />
-      </div>
+      <RecordDialog
+        open={formOpen}
+        title={editing ? "Edit asset" : "New asset"}
+        description="Register the asset and its depreciation position."
+        submitLabel={editing ? "Update" : "Create"}
+        initialValue={editing ? { ...editing } : null}
+        onClose={() => setFormOpen(false)}
+        onSubmit={submit}
+        fields={[
+          { name: "name", label: "Asset name", type: "text", required: true, half: true },
+          { name: "category", label: "Category", type: "select", options: ["Vehicles", "Machinery", "Equipment", "Furniture", "Buildings", "IT"], half: true },
+          { name: "purchaseDate", label: "Purchase date", type: "date", required: true, half: true },
+          { name: "purchaseValue", label: "Purchase value", type: "number", required: true, half: true },
+          { name: "currentValue", label: "Current value", type: "number", required: true, half: true },
+          { name: "depreciation", label: "Accumulated depreciation", type: "number", required: true, half: true },
+          { name: "usefulLife", label: "Useful life (years)", type: "number", defaultValue: 5, half: true },
+          { name: "status", label: "Status", type: "select", options: ["Active", "Disposed"], half: true },
+        ]}
+      />
 
-      <div className="mt-6">
-        <EmptyState title="Capital asset workspace is ready" description="Enter assets to track depreciation, capital allowance, and tax benefit over time." icon={Building2} />
-      </div>
+      <DetailsDrawer
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail?.name ?? ""}
+        description="Capital asset details"
+        rows={
+          detail
+            ? [
+                { label: "Category", value: detail.category },
+                { label: "Purchase date", value: detail.purchaseDate },
+                { label: "Purchase value", value: formatCurrency(detail.purchaseValue) },
+                { label: "Depreciation", value: formatCurrency(detail.depreciation) },
+                { label: "Book value", value: formatCurrency(detail.currentValue) },
+                { label: "Tax benefit", value: formatCurrency(detail.depreciation * 0.3) },
+                { label: "Useful life", value: `${detail.usefulLife} years` },
+                { label: "Status", value: <StatusBadge value={detail.status} /> },
+              ]
+            : []
+        }
+        footer={
+          detail ? (
+            <>
+              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Edit</Button>
+              <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
+            </>
+          ) : null
+        }
+      />
 
-      <AssetForm open={showForm} onSave={(value) => { addAsset(value); setShowForm(false); }} onClose={() => setShowForm(false)} />
-    </TaxLayout>
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete asset"
+        description={`${pendingDelete?.name ?? ""} will be removed from the asset register.`}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => { if (pendingDelete) { deleteAsset(pendingDelete.id); toast.success("Asset deleted"); } }}
+      />
+    </TaxWorkspace>
   );
 }
