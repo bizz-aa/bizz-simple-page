@@ -1,81 +1,148 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { HandCoins, FilePlus2, Calculator, FileCheck2, BarChart3, WalletCards, Banknote, BadgeCheck, FileSpreadsheet } from "lucide-react";
-import { TaxLayout } from "@/components/tax-layout";
-import { useTaxModule, formatCurrency } from "@/components/tax-module-provider";
-import { TaxDataTable } from "@/components/tax-data-table";
-import { WithholdingForm } from "@/components/tax-forms";
-import { EmptyState, InsightPanel, MetricCard, ProgressBar, StatusPill } from "@/components/tax-workspace-ui";
+import { HandCoins, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useTaxModule, formatCurrency, type WithholdingRecord } from "@/components/tax-module-provider";
+import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
+import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
-export const Route = createFileRoute("/_authenticated/m/tax/withholding")({ component: WithholdingHub });
+export const Route = createFileRoute("/_authenticated/m/tax/withholding")({ component: WithholdingPage });
 
-function WithholdingHub() {
-  const { withholding, addWithholding } = useTaxModule();
-  const [showForm, setShowForm] = useState(false);
+function WithholdingPage() {
+  const { withholding, saveWithholding, deleteWithholding } = useTaxModule();
+  const [editing, setEditing] = useState<WithholdingRecord | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [detail, setDetail] = useState<WithholdingRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<WithholdingRecord | null>(null);
+
+  const openCreate = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (row: WithholdingRecord) => { setEditing(row); setFormOpen(true); };
+
+  const receivable = withholding.reduce((sum, row) => sum + (row.status === "Received" ? row.amount : 0), 0);
+  const payable = withholding.reduce((sum, row) => sum + (row.status === "Issued" ? row.amount : 0), 0);
+
+  const submit = (value: Record<string, FieldValue>) => {
+    saveWithholding(
+      {
+        name: str(value.name),
+        certificate: str(value.certificate),
+        type: str(value.type),
+        date: str(value.date),
+        amount: num(value.amount),
+        status: str(value.status) as WithholdingRecord["status"],
+      },
+      editing?.id,
+    );
+    toast.success(editing ? "Record updated" : "Record created");
+  };
 
   return (
-    <TaxLayout
+    <TaxWorkspace
       title="Withholding Tax"
-      subtitle="Certificates, balances and reporting"
-      headerIcon={HandCoins}
-      cards={[
-        { label: "New Record", icon: FilePlus2 },
-        { label: "Certificates", icon: FileCheck2 },
-        { label: "Balances", icon: WalletCards },
-        { label: "Reports", icon: BarChart3 },
-      ]}
-      sections={[
-        {
-          title: "Withholding Controls",
-          icon: HandCoins,
-          items: [
-            { label: "Withholding Records", icon: FilePlus2 },
-            { label: "WHT Certificates", icon: FileCheck2 },
-            { label: "Payments & Receivables", icon: Banknote },
-            { label: "WHT Reports", icon: BarChart3 },
-          ],
-        },
-      ]}
+      subtitle="Certificates, payments and balances"
+      icon={HandCoins}
+      actions={
+        <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
+          <Plus className="mr-1.5 h-4 w-4" /> New record
+        </Button>
+      }
     >
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <InsightPanel title="Certificate Position" icon={BadgeCheck} tone="emerald" action={<StatusPill label="Balanced" tone="emerald" />}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <MetricCard label="Issued Certificates" value={withholding.filter((item) => item.status === "Issued").length.toString()} tone="emerald" />
-            <MetricCard label="Received Certificates" value={withholding.filter((item) => item.status === "Received").length.toString()} tone="blue" />
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <ProgressBar label="Certificate completeness" value={86} tone="emerald" />
-          </div>
-        </InsightPanel>
+      <SummaryStrip
+        items={[
+          { label: "Receivable", value: formatCurrency(receivable), hint: "Certificates received", accent: true },
+          { label: "Payable", value: formatCurrency(payable), hint: "Certificates issued" },
+          { label: "Certificates", value: String(withholding.length), hint: "Total on file" },
+          { label: "Pending", value: String(withholding.filter((row) => row.status === "Pending").length), hint: "Awaiting certificate" },
+        ]}
+      />
 
-        <InsightPanel title="Balances" icon={WalletCards} tone="violet">
-          <MetricCard label="Receivables" value={formatCurrency(withholding.reduce((sum, item) => sum + (item.status === "Received" ? item.amount : 0), 0))} tone="violet" />
-          <MetricCard label="Payables" value={formatCurrency(withholding.reduce((sum, item) => sum + (item.status === "Issued" ? item.amount : 0), 0))} tone="amber" />
-          <MetricCard label="Status" value="On schedule" tone="slate" />
-        </InsightPanel>
-      </div>
+      <TaxTable
+        rows={withholding}
+        searchKeys={(row) => `${row.name} ${row.certificate} ${row.type} ${row.status}`}
+        filter={{
+          label: "Status",
+          options: [
+            { value: "Issued", label: "Issued" },
+            { value: "Received", label: "Received" },
+            { value: "Pending", label: "Pending" },
+          ],
+          match: (row, value) => row.status === value,
+        }}
+        columns={[
+          { key: "name", label: "Counterparty", render: (row) => <span className="font-medium text-white">{row.name}</span> },
+          { key: "certificate", label: "Certificate", hideOnMobile: true },
+          { key: "type", label: "Type", hideOnMobile: true },
+          { key: "date", label: "Date", hideOnMobile: true },
+          { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
+          { key: "status", label: "Status", render: (row) => <StatusBadge value={row.status} /> },
+        ]}
+        onRowClick={setDetail}
+        onEdit={openEdit}
+        onDelete={setPendingDelete}
+        onExport={(rows) =>
+          exportCsv(
+            "withholding-tax.csv",
+            ["Counterparty", "Certificate", "Type", "Date", "Amount", "Status"],
+            rows.map((row) => [row.name, row.certificate, row.type, row.date, row.amount, row.status]),
+          )
+        }
+        addLabel="New record"
+        onAdd={openCreate}
+        empty={{ title: "No withholding records", description: "Add certificates and payments to track WHT balances.", icon: HandCoins }}
+      />
 
-      <div className="mt-6">
-        <TaxDataTable
-          title="Withholding register"
-          rows={withholding}
-          columns={[
-            { key: "name", label: "Name" },
-            { key: "type", label: "Type" },
-            { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
-            { key: "status", label: "Status" },
-          ]}
-          onAdd={() => setShowForm(true)}
-          emptyText="No withholding entries yet. Add your first certificate or payment record."
-          emptyActionLabel="Add entry"
-        />
-      </div>
+      <RecordDialog
+        open={formOpen}
+        title={editing ? "Edit withholding record" : "New withholding record"}
+        description="Track certificates issued to and received from counterparties."
+        submitLabel={editing ? "Update" : "Create"}
+        initialValue={editing ? { ...editing } : null}
+        onClose={() => setFormOpen(false)}
+        onSubmit={submit}
+        fields={[
+          { name: "name", label: "Counterparty", type: "text", required: true, half: true },
+          { name: "certificate", label: "Certificate no.", type: "text", required: true, half: true },
+          { name: "type", label: "Type", type: "select", options: ["Services", "Rent", "Dividends", "Interest", "Goods"], half: true },
+          { name: "date", label: "Date", type: "date", required: true, half: true },
+          { name: "amount", label: "Amount", type: "number", required: true, half: true },
+          { name: "status", label: "Status", type: "select", options: ["Issued", "Received", "Pending"], half: true },
+        ]}
+      />
 
-      <div className="mt-6">
-        <EmptyState title="Withholding workspace is ready" description="Upload certificate and payment records to keep balances, status, and reporting up to date." icon={HandCoins} />
-      </div>
+      <DetailsDrawer
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail?.name ?? ""}
+        description="Withholding record details"
+        rows={
+          detail
+            ? [
+                { label: "Certificate", value: detail.certificate },
+                { label: "Type", value: detail.type },
+                { label: "Date", value: detail.date },
+                { label: "Amount", value: formatCurrency(detail.amount) },
+                { label: "Status", value: <StatusBadge value={detail.status} /> },
+              ]
+            : []
+        }
+        footer={
+          detail ? (
+            <>
+              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Edit</Button>
+              <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
+            </>
+          ) : null
+        }
+      />
 
-      <WithholdingForm open={showForm} onSave={(value) => { addWithholding(value); setShowForm(false); }} onClose={() => setShowForm(false)} />
-    </TaxLayout>
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete withholding record"
+        description={`${pendingDelete?.name ?? ""} will be removed from the register.`}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => { if (pendingDelete) { deleteWithholding(pendingDelete.id); toast.success("Record deleted"); } }}
+      />
+    </TaxWorkspace>
   );
 }

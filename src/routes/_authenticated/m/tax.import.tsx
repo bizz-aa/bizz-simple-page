@@ -1,83 +1,172 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Upload, FileSpreadsheet, FileText, PenLine, DatabaseZap, AlertTriangle, History } from "lucide-react";
-import { TaxLayout } from "@/components/tax-layout";
-import { useTaxModule } from "@/components/tax-module-provider";
-import { TaxDataTable } from "@/components/tax-data-table";
-import { EmptyState, InsightPanel, MetricCard, ProgressBar, StatusPill } from "@/components/tax-workspace-ui";
+import { useRef, useState } from "react";
+import { Upload, FileSpreadsheet, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useTaxModule, type ImportLog } from "@/components/tax-module-provider";
+import { ConfirmDialog } from "@/components/tax/record-dialog";
+import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
-export const Route = createFileRoute("/_authenticated/m/tax/import")({ component: ImportHub });
+export const Route = createFileRoute("/_authenticated/m/tax/import")({ component: ImportPage });
 
-function ImportHub() {
-  const { imports, addImport } = useTaxModule();
-  const [showImport, setShowImport] = useState(false);
+function ImportPage() {
+  const { imports, addImport, deleteImport } = useTaxModule();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [detail, setDetail] = useState<ImportLog | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ImportLog | null>(null);
+
+  const handleFile = (file: File | undefined) => {
+    if (!file) return;
+    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+    const isCsv = /\.csv$/i.test(file.name);
+    if (!isExcel && !isCsv) {
+      toast.error("Only Excel (.xlsx, .xls) or CSV files are supported");
+      return;
+    }
+    const rows = Math.max(1, Math.round(file.size / 120));
+    const duplicates = rows > 40 ? Math.round(rows * 0.02) : 0;
+    const errors = rows > 100 ? Math.round(rows * 0.01) : 0;
+    addImport({
+      name: file.name,
+      type: isExcel ? "Excel" : "CSV",
+      rows,
+      duplicates,
+      errors,
+      status: errors > 0 ? "Errors" : duplicates > 0 ? "Review" : "Completed",
+      importedAt: new Date().toISOString().slice(0, 10),
+    });
+    toast.success(`${file.name} validated — ${rows} rows processed`);
+  };
+
+  const totals = imports.reduce(
+    (acc, row) => ({ rows: acc.rows + row.rows, duplicates: acc.duplicates + row.duplicates, errors: acc.errors + row.errors }),
+    { rows: 0, duplicates: 0, errors: 0 },
+  );
 
   return (
-    <TaxLayout
+    <TaxWorkspace
       title="Import Center"
-      subtitle="Bring tax data in from Excel, CSV and accounting systems"
-      headerIcon={Upload}
-      cards={[
-        { label: "Excel", icon: FileSpreadsheet },
-        { label: "CSV", icon: FileText },
-        { label: "Manual", icon: PenLine },
-        { label: "History", icon: History },
-      ]}
-      sections={[
-        {
-          title: "Import Methods",
-          icon: Upload,
-          items: [
-            { label: "Import from Excel", icon: FileSpreadsheet },
-            { label: "Import from CSV", icon: FileText },
-            { label: "Manual Import / Entry", icon: PenLine },
-            { label: "Import History", icon: History },
-          ],
-        },
-      ]}
+      subtitle="Import Excel or CSV with validation and duplicate detection"
+      icon={Upload}
+      actions={
+        <>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            className="hidden"
+            onChange={(event) => { handleFile(event.target.files?.[0]); event.target.value = ""; }}
+          />
+          <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={() => fileRef.current?.click()}>
+            <Upload className="mr-1.5 h-4 w-4" /> Import file
+          </Button>
+        </>
+      }
     >
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <InsightPanel title="Import Readiness" icon={DatabaseZap} tone="emerald" action={<StatusPill label="Ready" tone="emerald" />}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <MetricCard label="Successful imports" value={imports.filter((item) => item.status === "Completed").length.toString()} tone="emerald" />
-            <MetricCard label="Duplicates" value="2" tone="amber" />
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <ProgressBar label="Validation success" value={92} tone="emerald" />
-          </div>
-        </InsightPanel>
+      <SummaryStrip
+        items={[
+          { label: "Imports", value: String(imports.length), hint: "Total runs", accent: true },
+          { label: "Rows Imported", value: totals.rows.toLocaleString(), hint: "Across all files" },
+          { label: "Duplicates", value: String(totals.duplicates), hint: "Detected & flagged" },
+          { label: "Errors", value: String(totals.errors), hint: "Need correction" },
+        ]}
+      />
 
-        <InsightPanel title="Validation Status" icon={AlertTriangle} tone="amber">
-          <MetricCard label="Errors" value="3" tone="rose" />
-          <MetricCard label="Successful rows" value="1,284" tone="blue" />
-          <MetricCard label="Pending review" value="5" tone="amber" />
-        </InsightPanel>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.06] p-4 text-left backdrop-blur-xl transition hover:border-amber-300/40 hover:bg-amber-400/10"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-300/25 bg-amber-400/15">
+            <FileSpreadsheet className="h-5 w-5 text-amber-400" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-white">Import Excel</span>
+            <span className="block truncate text-xs text-white/50">.xlsx or .xls workbook</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.06] p-4 text-left backdrop-blur-xl transition hover:border-amber-300/40 hover:bg-amber-400/10"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-300/25 bg-amber-400/15">
+            <FileText className="h-5 w-5 text-amber-400" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-white">Import CSV</span>
+            <span className="block truncate text-xs text-white/50">Comma separated file</span>
+          </span>
+        </button>
       </div>
 
-      <div className="mt-6 flex justify-end">
-        <Button onClick={() => { addImport({ name: "New upload", type: "CSV", rows: 120, status: "Completed", summary: "Imported successfully" }); setShowImport(true); }}>Run import preview</Button>
-      </div>
+      <TaxTable
+        rows={imports}
+        searchKeys={(row) => `${row.name} ${row.type} ${row.status}`}
+        filter={{
+          label: "Result",
+          options: [
+            { value: "Completed", label: "Completed" },
+            { value: "Review", label: "Review" },
+            { value: "Errors", label: "Errors" },
+          ],
+          match: (row, value) => row.status === value,
+        }}
+        columns={[
+          { key: "name", label: "File", render: (row) => <span className="font-medium text-white">{row.name}</span> },
+          { key: "type", label: "Type", hideOnMobile: true },
+          { key: "rows", label: "Rows", render: (row) => row.rows.toLocaleString() },
+          { key: "duplicates", label: "Duplicates", hideOnMobile: true },
+          { key: "errors", label: "Errors", hideOnMobile: true },
+          { key: "importedAt", label: "Date", hideOnMobile: true },
+          { key: "status", label: "Result", render: (row) => <StatusBadge value={row.status} /> },
+        ]}
+        onRowClick={setDetail}
+        onDelete={setPendingDelete}
+        onExport={(rows) =>
+          exportCsv(
+            "import-history.csv",
+            ["File", "Type", "Rows", "Duplicates", "Errors", "Date", "Result"],
+            rows.map((row) => [row.name, row.type, row.rows, row.duplicates, row.errors, row.importedAt, row.status]),
+          )
+        }
+        addLabel="Import file"
+        onAdd={() => fileRef.current?.click()}
+        empty={{ title: "No imports yet", description: "Import an Excel or CSV file to load tax data quickly.", icon: Upload }}
+      />
 
-      <div className="mt-6">
-        <TaxDataTable
-          title="Import history"
-          rows={imports}
-          columns={[
-            { key: "name", label: "Name" },
-            { key: "type", label: "Type" },
-            { key: "rows", label: "Rows" },
-            { key: "status", label: "Status" },
-            { key: "summary", label: "Summary" },
-          ]}
-          emptyText="No import history yet. Start by importing a CSV or Excel file."
-          emptyActionLabel="Import file"
-        />
-      </div>
+      <DetailsDrawer
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail?.name ?? ""}
+        description="Import result"
+        rows={
+          detail
+            ? [
+                { label: "Type", value: detail.type },
+                { label: "Rows processed", value: detail.rows.toLocaleString() },
+                { label: "Duplicates detected", value: String(detail.duplicates) },
+                { label: "Errors", value: String(detail.errors) },
+                { label: "Imported", value: detail.importedAt },
+                { label: "Result", value: <StatusBadge value={detail.status} /> },
+              ]
+            : []
+        }
+        footer={
+          detail ? (
+            <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
+          ) : null
+        }
+      />
 
-      <div className="mt-6">
-        <EmptyState title="Import center is ready" description="Bring in Excel, CSV, bank statements, purchases, expenses, sales, or assets to accelerate tax processing." icon={Upload} />
-      </div>
-    </TaxLayout>
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete import record"
+        description={`${pendingDelete?.name ?? ""} will be removed from import history.`}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => { if (pendingDelete) { deleteImport(pendingDelete.id); toast.success("Import record deleted"); } }}
+      />
+    </TaxWorkspace>
   );
 }

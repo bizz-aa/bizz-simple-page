@@ -1,82 +1,147 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Percent, ArrowUpRight, ArrowDownLeft, Calculator, FileCheck2, BadgeCheck, CircleDollarSign, Clock3, FileSpreadsheet } from "lucide-react";
-import { TaxLayout } from "@/components/tax-layout";
-import { useTaxModule, formatCurrency } from "@/components/tax-module-provider";
-import { TaxDataTable } from "@/components/tax-data-table";
-import { VatForm } from "@/components/tax-forms";
-import { EmptyState, InsightPanel, MetricCard, ProgressBar, StatusPill } from "@/components/tax-workspace-ui";
+import { Percent, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useTaxModule, formatCurrency, type VatReturnRecord } from "@/components/tax-module-provider";
+import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
+import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
-export const Route = createFileRoute("/_authenticated/m/tax/vat")({ component: VatHub });
+export const Route = createFileRoute("/_authenticated/m/tax/vat")({ component: VatPage });
 
-function VatHub() {
-  const { vatReturns, addVatReturn, metrics } = useTaxModule();
-  const [showForm, setShowForm] = useState(false);
+function VatPage() {
+  const { vatReturns, saveVatReturn, deleteVatReturn, metrics } = useTaxModule();
+  const [editing, setEditing] = useState<VatReturnRecord | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [detail, setDetail] = useState<VatReturnRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<VatReturnRecord | null>(null);
+
+  const openCreate = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (row: VatReturnRecord) => { setEditing(row); setFormOpen(true); };
+
+  const submit = (value: Record<string, FieldValue>) => {
+    const outputVat = num(value.outputVat);
+    const inputVat = num(value.inputVat);
+    saveVatReturn(
+      {
+        period: str(value.period),
+        outputVat,
+        inputVat,
+        payable: Math.max(0, outputVat - inputVat),
+        paymentStatus: str(value.paymentStatus) as VatReturnRecord["paymentStatus"],
+        status: str(value.status) as VatReturnRecord["status"],
+      },
+      editing?.id,
+    );
+    toast.success(editing ? "VAT return updated" : "VAT return created");
+  };
 
   return (
-    <TaxLayout
+    <TaxWorkspace
       title="VAT"
-      subtitle="Output, input and return position"
-      headerIcon={Percent}
-      cards={[
-        { label: "Output VAT", icon: ArrowUpRight },
-        { label: "Input VAT", icon: ArrowDownLeft },
-        { label: "VAT Payable", icon: CircleDollarSign },
-        { label: "Returns", icon: FileCheck2 },
-      ]}
-      sections={[
-        {
-          title: "VAT Operations",
-          icon: Percent,
-          items: [
-            { label: "Output VAT Register", icon: ArrowUpRight },
-            { label: "Input VAT Register", icon: ArrowDownLeft },
-            { label: "VAT Return Filing", icon: FileCheck2 },
-            { label: "Compliance Documents", icon: FileSpreadsheet },
-          ],
-        },
-      ]}
+      subtitle="Output VAT, input VAT and return filing"
+      icon={Percent}
+      actions={
+        <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
+          <Plus className="mr-1.5 h-4 w-4" /> New return
+        </Button>
+      }
     >
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <InsightPanel title="VAT Position" icon={BadgeCheck} tone="emerald" action={<StatusPill label="Compliant" tone="emerald" />}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <MetricCard label="Output VAT" value={formatCurrency(metrics.outputVat)} tone="emerald" />
-            <MetricCard label="Input VAT" value={formatCurrency(metrics.inputVat)} tone="blue" />
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <ProgressBar label="VAT compliance score" value={Math.round(metrics.complianceScore)} tone="emerald" />
-          </div>
-        </InsightPanel>
+      <SummaryStrip
+        items={[
+          { label: "Output VAT", value: formatCurrency(metrics.outputVat), hint: "Collected on sales", accent: true },
+          { label: "Input VAT", value: formatCurrency(metrics.inputVat), hint: "Claimable on purchases" },
+          { label: "VAT Balance", value: formatCurrency(metrics.vatPayable), hint: "Payable to authority" },
+          { label: "Unfiled Returns", value: String(vatReturns.filter((row) => row.status !== "Filed").length), hint: "Action required" },
+        ]}
+      />
 
-        <InsightPanel title="Upcoming Deadlines" icon={Clock3} tone="amber">
-          <MetricCard label="VAT Payable" value={formatCurrency(metrics.vatPayable)} tone="amber" />
-          <MetricCard label="Outstanding VAT" value={formatCurrency(Math.max(0, metrics.vatPayable - 800000))} tone="rose" />
-          <MetricCard label="Returns ready" value={vatReturns.filter((item) => item.status !== "Filed").length.toString()} tone="slate" />
-        </InsightPanel>
-      </div>
+      <TaxTable
+        rows={vatReturns}
+        searchKeys={(row) => `${row.period} ${row.status} ${row.paymentStatus}`}
+        filter={{
+          label: "Status",
+          options: [
+            { value: "Filed", label: "Filed" },
+            { value: "Draft", label: "Draft" },
+            { value: "Pending", label: "Pending" },
+            { value: "Unpaid", label: "Unpaid" },
+          ],
+          match: (row, value) => (value === "Unpaid" ? row.paymentStatus === "Unpaid" : row.status === value),
+        }}
+        columns={[
+          { key: "period", label: "Period", render: (row) => <span className="font-medium text-white">{row.period}</span> },
+          { key: "outputVat", label: "Output VAT", render: (row) => formatCurrency(row.outputVat), hideOnMobile: true },
+          { key: "inputVat", label: "Input VAT", render: (row) => formatCurrency(row.inputVat), hideOnMobile: true },
+          { key: "payable", label: "Balance", render: (row) => formatCurrency(row.payable) },
+          { key: "paymentStatus", label: "Payment", render: (row) => <StatusBadge value={row.paymentStatus} /> },
+          { key: "status", label: "Status", render: (row) => <StatusBadge value={row.status} /> },
+        ]}
+        onRowClick={setDetail}
+        onEdit={openEdit}
+        onDelete={setPendingDelete}
+        onExport={(rows) =>
+          exportCsv(
+            "vat-returns.csv",
+            ["Period", "Output VAT", "Input VAT", "Balance", "Payment", "Status"],
+            rows.map((row) => [row.period, row.outputVat, row.inputVat, row.payable, row.paymentStatus, row.status]),
+          )
+        }
+        addLabel="New return"
+        onAdd={openCreate}
+        empty={{ title: "No VAT returns", description: "Create a VAT return to track your filing position.", icon: Percent }}
+      />
 
-      <div className="mt-6">
-        <TaxDataTable
-          title="VAT returns"
-          rows={vatReturns}
-          columns={[
-            { key: "period", label: "Period" },
-            { key: "outputVat", label: "Output VAT", render: (row) => formatCurrency(row.outputVat) },
-            { key: "inputVat", label: "Input VAT", render: (row) => formatCurrency(row.inputVat) },
-            { key: "payable", label: "Payable", render: (row) => formatCurrency(row.payable) },
-            { key: "status", label: "Status" },
-          ]}
-          onAdd={() => setShowForm(true)}
-          emptyText="No VAT returns yet. Add one to track your filing position."
-          emptyActionLabel="Add return"
-        />
-      </div>
+      <RecordDialog
+        open={formOpen}
+        title={editing ? "Edit VAT return" : "New VAT return"}
+        description="Balance is calculated as output VAT minus input VAT."
+        submitLabel={editing ? "Update" : "Create"}
+        initialValue={editing ? { ...editing } : null}
+        onClose={() => setFormOpen(false)}
+        onSubmit={submit}
+        fields={[
+          { name: "period", label: "Period", type: "text", required: true, half: true },
+          { name: "status", label: "Filing status", type: "select", options: ["Draft", "Pending", "Filed"], half: true },
+          { name: "outputVat", label: "Output VAT", type: "number", required: true, half: true },
+          { name: "inputVat", label: "Input VAT", type: "number", required: true, half: true },
+          { name: "paymentStatus", label: "Payment status", type: "select", options: ["Unpaid", "Partial", "Paid"], half: true },
+        ]}
+      />
 
-      <div className="mt-6">
-        <EmptyState title="VAT workspace is ready" description="Import your sales and purchase ledgers to populate VAT returns, payable balances, and filing timelines automatically." icon={Calculator} />
-      </div>
+      <DetailsDrawer
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail?.period ?? ""}
+        description="VAT return details"
+        rows={
+          detail
+            ? [
+                { label: "Output VAT", value: formatCurrency(detail.outputVat) },
+                { label: "Input VAT", value: formatCurrency(detail.inputVat) },
+                { label: "Balance", value: formatCurrency(detail.payable) },
+                { label: "Payment status", value: <StatusBadge value={detail.paymentStatus} /> },
+                { label: "Filing status", value: <StatusBadge value={detail.status} /> },
+              ]
+            : []
+        }
+        footer={
+          detail ? (
+            <>
+              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Edit</Button>
+              <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
+            </>
+          ) : null
+        }
+      />
 
-      <VatForm open={showForm} onSave={(value) => { addVatReturn(value); setShowForm(false); }} onClose={() => setShowForm(false)} />
-    </TaxLayout>
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete VAT return"
+        description={`${pendingDelete?.period ?? ""} will be removed from your VAT history.`}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => { if (pendingDelete) { deleteVatReturn(pendingDelete.id); toast.success("VAT return deleted"); } }}
+      />
+    </TaxWorkspace>
   );
 }
