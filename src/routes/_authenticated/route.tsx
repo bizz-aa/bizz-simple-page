@@ -86,11 +86,11 @@ function AuthedLayout() {
     <div className="relative flex min-h-screen text-foreground">
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-y-0 right-0 left-0 -z-10 bg-cover bg-center bg-no-repeat md:left-96"
+        className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-cover bg-center bg-no-repeat md:left-96"
         style={{ backgroundImage: `url(${desertSunsetBg})`, backgroundAttachment: "scroll" }}
       />
-      <div aria-hidden className="pointer-events-none fixed inset-y-0 right-0 left-0 -z-10 bg-black/45 md:left-96" />
-      <aside className="sticky top-0 hidden h-screen w-96 flex-col border-r border-sidebar-border bg-sidebar backdrop-blur-xl md:flex">
+      <div aria-hidden className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-black/40 md:left-96" />
+      <aside className="relative z-10 sticky top-0 hidden h-screen w-96 flex-col border-r border-sidebar-border bg-sidebar backdrop-blur-xl md:flex">
 
         <div className="flex h-40 items-center justify-center border-b border-sidebar-border px-8 py-8">
           <img
@@ -132,7 +132,7 @@ function AuthedLayout() {
         </nav>
       </aside>
 
-      <div className="flex h-screen flex-1 flex-col overflow-y-auto">
+      <div className="relative z-10 flex h-screen flex-1 flex-col overflow-y-auto">
         <header className="sticky top-0 z-50 border-b border-white/5 bg-black/40 px-4 py-4 backdrop-blur-xl md:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
