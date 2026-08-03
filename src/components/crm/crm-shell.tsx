@@ -21,7 +21,6 @@ export function CrmShell({
   return (
     <div
       className="relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden text-white"
-      }
     >
 
       <div className="mx-auto max-w-md md:max-w-6xl px-4 md:px-10 pb-28 md:pb-12 pt-5 md:pt-10">
