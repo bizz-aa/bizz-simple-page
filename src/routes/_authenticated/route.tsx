@@ -86,10 +86,10 @@ function AuthedLayout() {
     <div className="relative flex min-h-screen text-foreground">
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-cover bg-center bg-no-repeat md:left-96"
+        className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-cover bg-[center_left] bg-no-repeat md:left-96"
         style={{ backgroundImage: `url(${desertSunsetBg})`, backgroundAttachment: "scroll" }}
       />
-      <div aria-hidden className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-black/40 md:left-96" />
+      <div aria-hidden className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-gradient-to-b from-black/35 via-black/45 to-black/65 md:left-96" />
       <aside className="relative z-10 sticky top-0 hidden h-screen w-96 flex-col border-r border-sidebar-border bg-sidebar backdrop-blur-xl md:flex">
 
         <div className="flex h-40 items-center justify-center border-b border-sidebar-border px-8 py-8">
