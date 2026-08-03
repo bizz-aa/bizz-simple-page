@@ -137,6 +137,32 @@
 .page-transition {
   animation: page-enter 0.18s ease-out both;
 }
-@media (prefers-reduced-motion: reduce) {
-  .page-transition { animation: none; }
+
+/* Content drifts in gently, like blown by wind */
+@keyframes content-drift {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.995);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
 }
+.page-transition > * {
+  animation: content-drift 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.page-transition > *:nth-child(1) { animation-delay: 0.02s; }
+.page-transition > *:nth-child(2) { animation-delay: 0.07s; }
+.page-transition > *:nth-child(3) { animation-delay: 0.12s; }
+.page-transition > *:nth-child(4) { animation-delay: 0.17s; }
+.page-transition > *:nth-child(5) { animation-delay: 0.22s; }
+.page-transition > *:nth-child(n + 6) { animation-delay: 0.26s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition,
+  .page-transition > * { animation: none; }
+}
+

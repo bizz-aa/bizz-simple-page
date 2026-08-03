@@ -87,9 +87,23 @@ function AuthedLayout() {
       <div
         aria-hidden
         className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-cover bg-[center_left] bg-no-repeat lg:left-72 xl:left-96"
-        style={{ backgroundImage: `url(${desertSunsetBg})`, backgroundAttachment: "scroll" }}
+        style={{
+          backgroundImage: `url(${desertSunsetBg})`,
+          backgroundAttachment: "scroll",
+          filter: "brightness(0.72) saturate(0.92)",
+        }}
       />
-      <div aria-hidden className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-gradient-to-b from-black/35 via-black/45 to-black/65 lg:left-72 xl:left-96" />
+      {/* Tames the sun glare specifically */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 lg:left-72 xl:left-96"
+        style={{
+          background:
+            "radial-gradient(60% 45% at 30% 42%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 45%, rgba(0,0,0,0) 75%)",
+        }}
+      />
+      <div aria-hidden className="pointer-events-none fixed inset-y-0 right-0 left-0 z-0 bg-gradient-to-b from-black/40 via-black/45 to-black/65 lg:left-72 xl:left-96" />
+
       <aside className="relative z-10 sticky top-0 hidden h-screen w-72 xl:w-96 flex-col border-r border-sidebar-border bg-sidebar backdrop-blur-xl lg:flex">
 
         <div className="flex h-40 items-center justify-center border-b border-sidebar-border px-8 py-8">
