@@ -1,15 +1,38 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   Landmark, ShoppingCart, ShoppingBag, Receipt, Percent,
   Coins, HandCoins, Building2, FolderArchive, Upload, BarChart3,
-  CalendarDays, AlertTriangle, Activity, ChevronRight,
+  CalendarDays, AlertTriangle, Activity, Sparkles, BadgeCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaxLayout } from "@/components/tax-layout";
+import { TaxModuleProvider, formatCurrency, useTaxModule } from "@/components/tax-module-provider";
+import { EmptyState, InsightPanel, MetricCard, ProgressBar, StatusPill, TimelineItem } from "@/components/tax-workspace-ui";
 
 export const Route = createFileRoute("/_authenticated/m/tax")({ component: TaxHub });
 
 function TaxHub() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isNestedRoute = pathname !== "/m/tax" && pathname.startsWith("/m/tax/");
+
+  if (isNestedRoute) {
+    return (
+      <TaxModuleProvider>
+        <Outlet />
+      </TaxModuleProvider>
+    );
+  }
+
+  return (
+    <TaxModuleProvider>
+      <TaxOverview />
+    </TaxModuleProvider>
+  );
+}
+
+function TaxOverview() {
+  const { metrics } = useTaxModule();
+
   return (
     <TaxLayout
       title="Tax Management"
@@ -59,32 +82,35 @@ function TaxHub() {
         },
       ]}
     >
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Output VAT", value: "TZS 0" },
-          { label: "Input VAT", value: "TZS 0" },
-          { label: "Net VAT", value: "TZS 0" },
-          { label: "Filings Due", value: "0" },
-        ].map((s) => (
-          <div key={s.label} className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl p-4">
-            <p className="text-[11px] uppercase tracking-wider text-white/60">{s.label}</p>
-            <p className="mt-1 font-display text-lg font-bold text-white">{s.value}</p>
+      <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <InsightPanel title="Tax Health" icon={BadgeCheck} tone="emerald" action={<StatusPill label="Stable" tone="emerald" />}>
+          <div className="grid gap-3 md:grid-cols-2">
+            <MetricCard label="Projected Annual Profit" value={formatCurrency(metrics.projectedProfit)} hint="Above plan" tone="emerald" />
+            <MetricCard label="Estimated Tax" value={formatCurrency(metrics.estimatedTax)} hint="30% applied" tone="amber" />
           </div>
-        ))}
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <ProgressBar label="Compliance readiness" value={Math.round(metrics.complianceScore)} tone="emerald" />
+          </div>
+        </InsightPanel>
+
+        <InsightPanel title="Intelligent Summary" icon={Sparkles} tone="violet">
+          <MetricCard label="VAT status" value={metrics.vatPayable > 0 ? "Payable" : "Balanced"} hint="Returns prepared" tone="violet" />
+          <MetricCard label="Deductible spend" value={formatCurrency(metrics.deductibleExpenses)} hint="Tracked" tone="blue" />
+          <MetricCard label="Document coverage" value={`${Math.round(metrics.complianceScore)}%`} hint="Verified" tone="slate" />
+        </InsightPanel>
       </div>
-      <button
-        onClick={() => toast.info("Tax Overview — coming soon")}
-        className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-white/15 backdrop-blur-xl p-5 text-left transition hover:scale-[1.02] hover:bg-white/25 border border-white/30"
-      >
-        <div className="grid h-12 w-12 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 backdrop-blur">
-          <BarChart3 className="h-6 w-6 text-amber-400" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-display text-lg font-bold text-white">Tax Overview</h3>
-          <p className="text-xs text-white/70">Consolidated tax position &amp; obligations</p>
-        </div>
-        <ChevronRight className="h-5 w-5 text-white/60" />
-      </button>
+
+      <div className="mt-6">
+        <InsightPanel title="Tax Timeline" icon={CalendarDays} tone="slate">
+          <TimelineItem title="Quarterly estimate due" detail="Prepare provisional tax estimate for the next reporting cycle." status="Upcoming" />
+          <TimelineItem title="VAT return window" detail="Review output and input balances before filing." status="Open" />
+          <TimelineItem title="Annual review checkpoint" detail="Reconcile profits and deductible expenses before close." status="Planned" />
+        </InsightPanel>
+      </div>
+
+      <div className="mt-6">
+        <EmptyState title="Tax management center is ready" description="Connect your data sources to surface projections, tax risk, deductions and reports in one place." icon={Landmark} />
+      </div>
     </TaxLayout>
   );
 }

@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
   Home, ShoppingCart, Scan, Package, MoreHorizontal, ChevronRight,
@@ -23,14 +23,6 @@ export function TaxLayout({
   sections?: { title: string; icon: LucideIcon; items: TaxListItem[] }[];
   children?: React.ReactNode;
 }) {
-  const navigate = useNavigate();
-
-  const go = (item: { onClick?: () => void; to?: string; label: string }) => {
-    if (item.onClick) return item.onClick();
-    if (item.to) return navigate({ to: item.to });
-    toast.info(`${item.label} — coming soon`);
-  };
-
   return (
     <div
       className="relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden text-white"
@@ -48,18 +40,38 @@ export function TaxLayout({
 
         {cards.length > 0 && (
           <div className="mt-8 md:mt-12 grid grid-cols-4 gap-4 md:gap-8">
-            {cards.map((c) => (
-              <button
-                key={c.label}
-                onClick={() => go(c)}
-                className="group flex flex-col items-center gap-3 md:gap-4 transition hover:scale-110"
-              >
-                <div className="grid h-16 w-16 md:h-28 md:w-28 place-items-center rounded-2xl md:rounded-3xl border border-amber-300/30 bg-amber-400/15 backdrop-blur-xl transition group-hover:bg-amber-400/25 group-hover:shadow-lg group-hover:shadow-amber-400/20">
-                  <c.icon className="h-6 w-6 md:h-10 md:w-10 text-amber-400" />
-                </div>
-                <span className="text-center text-[11px] md:text-sm font-semibold text-white">{c.label}</span>
-              </button>
-            ))}
+            {cards.map((c) => {
+              const cardContent = (
+                <>
+                  <div className="grid h-16 w-16 md:h-28 md:w-28 place-items-center rounded-2xl md:rounded-3xl border border-amber-300/30 bg-amber-400/15 backdrop-blur-xl transition group-hover:bg-amber-400/25 group-hover:shadow-lg group-hover:shadow-amber-400/20">
+                    <c.icon className="h-6 w-6 md:h-10 md:w-10 text-amber-400" />
+                  </div>
+                  <span className="text-center text-[11px] md:text-sm font-semibold text-white">{c.label}</span>
+                </>
+              );
+
+              if (c.to) {
+                return (
+                  <Link
+                    key={c.label}
+                    to={c.to}
+                    className="group flex flex-col items-center gap-3 md:gap-4 transition hover:scale-110"
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              }
+
+              return (
+                <button
+                  key={c.label}
+                  onClick={() => (c.onClick ? c.onClick() : toast.info(`${c.label} — coming soon`))}
+                  className="group flex flex-col items-center gap-3 md:gap-4 transition hover:scale-110"
+                >
+                  {cardContent}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -76,20 +88,38 @@ export function TaxLayout({
             </div>
             <div className="mt-3 h-px bg-white/20" />
             <ul className="mt-2 divide-y divide-white/20">
-              {sec.items.map((t) => (
-                <li key={t.label}>
-                  <button
-                    onClick={() => go(t)}
-                    className="flex w-full items-center gap-3 py-3 text-left transition hover:bg-white/10"
-                  >
+              {sec.items.map((t) => {
+                const content = (
+                  <>
                     <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400/15 backdrop-blur">
                       <t.icon className="h-4 w-4 text-amber-400" />
                     </div>
                     <span className="flex-1 text-[15px] text-white font-medium">{t.label}</span>
                     <ChevronRight className="h-4 w-4 text-white/60" />
-                  </button>
-                </li>
-              ))}
+                  </>
+                );
+
+                if (t.to) {
+                  return (
+                    <li key={t.label}>
+                      <Link to={t.to} className="flex w-full items-center gap-3 py-3 text-left transition hover:bg-white/10">
+                        {content}
+                      </Link>
+                    </li>
+                  );
+                }
+
+                return (
+                  <li key={t.label}>
+                    <button
+                      onClick={() => (t.onClick ? t.onClick() : toast.info(`${t.label} — coming soon`))}
+                      className="flex w-full items-center gap-3 py-3 text-left transition hover:bg-white/10"
+                    >
+                      {content}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
@@ -99,11 +129,11 @@ export function TaxLayout({
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
-          <BottomBtn label="Home" icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
-          <BottomBtn label="Sales" icon={ShoppingCart} onClick={() => navigate({ to: "/m/sales" })} />
-          <BottomBtn label="Scan" icon={Scan} big onClick={() => navigate({ to: "/pos" })} />
-          <BottomBtn label="Stock" icon={Package} onClick={() => navigate({ to: "/m/inventory" })} />
-          <BottomBtn label="More" icon={MoreHorizontal} onClick={() => navigate({ to: "/m/admin" })} />
+          <BottomBtn label="Home" icon={Home} to="/dashboard" />
+          <BottomBtn label="Sales" icon={ShoppingCart} to="/m/sales" />
+          <BottomBtn label="Scan" icon={Scan} big to="/pos" />
+          <BottomBtn label="Stock" icon={Package} to="/m/inventory" />
+          <BottomBtn label="More" icon={MoreHorizontal} to="/m/admin" />
         </div>
       </nav>
     </div>
@@ -111,10 +141,10 @@ export function TaxLayout({
 }
 
 function BottomBtn({
-  label, icon: Icon, active, big, onClick,
-}: { label: string; icon: LucideIcon; active?: boolean; big?: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1">
+  label, icon: Icon, active, big, to,
+}: { label: string; icon: LucideIcon; active?: boolean; big?: boolean; to?: string }) {
+  const content = (
+    <>
       <span
         className={`grid place-items-center rounded-full transition ${
           big ? "h-14 w-14 -mt-6 shadow-lg shadow-amber-500/40" : "h-10 w-10"
@@ -123,6 +153,16 @@ function BottomBtn({
         <Icon className={big ? "h-6 w-6" : "h-5 w-5"} />
       </span>
       <span className={`text-[10px] ${active ? "text-white" : "text-white/60"}`}>{label}</span>
-    </button>
+    </>
   );
+
+  if (to) {
+    return (
+      <Link to={to} className="flex flex-col items-center gap-1">
+        {content}
+      </Link>
+    );
+  }
+
+  return <button className="flex flex-col items-center gap-1">{content}</button>;
 }

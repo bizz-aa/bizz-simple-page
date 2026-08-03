@@ -27,23 +27,23 @@ const MODULES = [
 ] as const;
 
 const HEADINGS: { match: string; title: string; subtitle: string }[] = [
-  { match: "/dashboard", title: "Welcome back,", subtitle: "Simplify your business." },
-  { match: "/m/sales", title: "Sales", subtitle: "Manage orders, quotes and invoices." },
-  { match: "/m/crm", title: "Customers & CRM", subtitle: "Relationships and campaigns." },
-  { match: "/m/inventory", title: "Inventory", subtitle: "Stock levels, products and movements." },
-  { match: "/m/finance", title: "Finance", subtitle: "Cashflow, accounts and expenses." },
-  { match: "/m/tax", title: "Tax Management", subtitle: "Independent tax records & compliance." },
-  { match: "/m/employees", title: "Employees", subtitle: "Team, roles and payroll." },
-  { match: "/m/reports", title: "Reports", subtitle: "Business performance at a glance." },
-  { match: "/m/admin", title: "Administration", subtitle: "Users, roles and settings." },
-  { match: "/pos", title: "Point of Sale", subtitle: "Fast checkout for your counter." },
+  { match: "/dashboard", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/m/sales", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/m/crm", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/m/inventory", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/m/finance", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/m/tax", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/m/employees", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/m/reports", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/m/admin", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
+  { match: "/pos", title: "BIZZ AUTOMATORS", subtitle: "Simplify your business." },
 ];
 
 function useHeading(pathname: string) {
   return (
     HEADINGS.find((h) => pathname === h.match || pathname.startsWith(h.match + "/")) ?? {
-      title: "Bizz Automators",
-      subtitle: "Business automation workspace.",
+      title: "BIZZ AUTOMATORS",
+      subtitle: "Simplify your business.",
     }
   );
 }
