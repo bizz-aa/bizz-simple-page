@@ -1,110 +1,146 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ShoppingCart, FilePlus2, Receipt, Upload, Wrench, BarChart3, CircleDollarSign, BadgeCheck } from "lucide-react";
-import { TaxLayout } from "@/components/tax-layout";
-import { useTaxModule, formatCurrency } from "@/components/tax-module-provider";
-import { TaxDataTable } from "@/components/tax-data-table";
-import { SaleForm } from "@/components/tax-forms";
-import { EmptyState, InsightPanel, MetricCard, StatusPill } from "@/components/tax-workspace-ui";
+import { ShoppingCart, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useTaxModule, formatCurrency, type SaleRecord } from "@/components/tax-module-provider";
+import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
+import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
-export const Route = createFileRoute("/_authenticated/m/tax/sales")({ component: TaxSalesHub });
+export const Route = createFileRoute("/_authenticated/m/tax/sales")({ component: TaxSalesPage });
 
-function TaxSalesHub() {
-  const { sales, addSale, updateSale, deleteSale, metrics } = useTaxModule();
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<number | null>(null);
+function TaxSalesPage() {
+  const { sales, saveSale, deleteSale, metrics } = useTaxModule();
+  const [editing, setEditing] = useState<SaleRecord | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [detail, setDetail] = useState<SaleRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<SaleRecord | null>(null);
 
-  const current = sales.find((item) => item.id === editing);
+  const openCreate = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (row: SaleRecord) => { setEditing(row); setFormOpen(true); };
+
+  const submit = (value: Record<string, FieldValue>) => {
+    saveSale(
+      {
+        reference: str(value.reference),
+        customer: str(value.customer),
+        date: str(value.date),
+        amount: num(value.amount),
+        vat: num(value.vat),
+        status: str(value.status) as SaleRecord["status"],
+      },
+      editing?.id,
+    );
+    toast.success(editing ? "Sales record updated" : "Sales record created");
+  };
 
   return (
-    <TaxLayout
+    <TaxWorkspace
       title="Tax Sales"
-      subtitle="Sales ledger and VAT impact"
-      headerIcon={ShoppingCart}
-      cards={[
-        { label: "Sales Entry", icon: FilePlus2 },
-        { label: "Receipts", icon: Receipt },
-        { label: "Import", icon: Upload },
-        { label: "Adjustments", icon: Wrench },
-      ]}
-      sections={[
-        {
-          title: "Manage",
-          icon: ShoppingCart,
-          items: [
-            { label: "Sales Entry", icon: FilePlus2 },
-            { label: "Receipt Management", icon: Receipt },
-            { label: "Import Sales", icon: Upload },
-            { label: "Sales Adjustments", icon: Wrench },
-            { label: "Sales Summary", icon: BarChart3 },
-          ],
-        },
-      ]}
+      subtitle="Taxable sales and output VAT register"
+      icon={ShoppingCart}
+      actions={
+        <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
+          <Plus className="mr-1.5 h-4 w-4" /> New sale
+        </Button>
+      }
     >
-      <div className="mt-8 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-        <InsightPanel title="Sales Summary" icon={CircleDollarSign} tone="emerald" action={<StatusPill label="Live" tone="emerald" />}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <MetricCard label="Sales Total" value={formatCurrency(metrics.salesTotal)} tone="emerald" />
-            <MetricCard label="VAT Output" value={formatCurrency(metrics.outputVat)} tone="amber" />
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/70">
-            Keep sales entries current to keep VAT and tax planning accurate.
-          </div>
-        </InsightPanel>
-        <InsightPanel title="Sales Status" icon={BadgeCheck} tone="violet">
-          <MetricCard label="Reviewed" value={sales.filter((item) => item.status === "Reviewed").length.toString()} tone="violet" />
-          <MetricCard label="Pending" value={sales.filter((item) => item.status === "Pending").length.toString()} tone="amber" />
-          <MetricCard label="Recorded" value={sales.filter((item) => item.status === "Recorded").length.toString()} tone="slate" />
-        </InsightPanel>
-      </div>
-
-      <div className="mt-6">
-        <TaxDataTable
-          title="Sales register"
-          rows={sales}
-          columns={[
-            { key: "reference", label: "Reference" },
-            { key: "customer", label: "Customer" },
-            { key: "date", label: "Date" },
-            { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
-            { key: "vat", label: "VAT", render: (row) => formatCurrency(row.vat) },
-            { key: "status", label: "Status" },
-          ]}
-          onAdd={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
-          onEdit={(row) => {
-            setEditing(row.id);
-            setShowForm(true);
-          }}
-          onDelete={(row) => deleteSale(row.id)}
-          emptyText="No sales records yet. Add the first entry to start tracking VAT and tax exposure."
-          emptyActionLabel="Add sale"
-        />
-      </div>
-
-      <div className="mt-6">
-        <EmptyState title="Sales workspace ready" description="Capture each sales transaction, attach the VAT effect, and keep your tax register current." icon={ShoppingCart} />
-      </div>
-
-      <SaleForm
-        open={showForm}
-        initialValue={current ? { reference: current.reference, customer: current.customer, date: current.date, amount: current.amount, vat: current.vat, status: current.status } : undefined}
-        onSave={(value) => {
-          if (editing) {
-            updateSale(editing, value);
-          } else {
-            addSale(value);
-          }
-          setShowForm(false);
-          setEditing(null);
-        }}
-        onClose={() => {
-          setShowForm(false);
-          setEditing(null);
-        }}
+      <SummaryStrip
+        items={[
+          { label: "Taxable Sales", value: formatCurrency(metrics.salesTotal), hint: `${sales.length} records`, accent: true },
+          { label: "Output VAT", value: formatCurrency(metrics.salesVat), hint: "Charged to customers" },
+          { label: "Reviewed", value: String(sales.filter((row) => row.status === "Reviewed").length), hint: "Ready for filing" },
+          { label: "Pending", value: String(sales.filter((row) => row.status === "Pending").length), hint: "Needs confirmation" },
+        ]}
       />
-    </TaxLayout>
+
+      <TaxTable
+        rows={sales}
+        searchKeys={(row) => `${row.reference} ${row.customer} ${row.date} ${row.status}`}
+        filter={{
+          label: "Status",
+          options: [
+            { value: "Recorded", label: "Recorded" },
+            { value: "Reviewed", label: "Reviewed" },
+            { value: "Pending", label: "Pending" },
+          ],
+          match: (row, value) => row.status === value,
+        }}
+        columns={[
+          { key: "reference", label: "Reference", render: (row) => <span className="font-medium text-white">{row.reference}</span> },
+          { key: "customer", label: "Customer" },
+          { key: "date", label: "Date", hideOnMobile: true },
+          { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
+          { key: "vat", label: "Tax Amount", render: (row) => formatCurrency(row.vat), hideOnMobile: true },
+          { key: "status", label: "Status", render: (row) => <StatusBadge value={row.status} /> },
+        ]}
+        onRowClick={setDetail}
+        onEdit={openEdit}
+        onDelete={setPendingDelete}
+        onExport={(rows) =>
+          exportCsv(
+            "tax-sales.csv",
+            ["Reference", "Customer", "Date", "Amount", "Tax Amount", "Status"],
+            rows.map((row) => [row.reference, row.customer, row.date, row.amount, row.vat, row.status]),
+          )
+        }
+        addLabel="New sale"
+        onAdd={openCreate}
+        empty={{ title: "No sales recorded", description: "Add your first taxable sale to build the output VAT register.", icon: ShoppingCart }}
+      />
+
+      <RecordDialog
+        open={formOpen}
+        title={editing ? "Edit sales record" : "New sales record"}
+        description="Capture the sale and its tax amount."
+        submitLabel={editing ? "Update" : "Create"}
+        initialValue={editing ? { ...editing } : null}
+        onClose={() => setFormOpen(false)}
+        onSubmit={submit}
+        fields={[
+          { name: "reference", label: "Reference", type: "text", required: true, half: true },
+          { name: "customer", label: "Customer", type: "text", required: true, half: true },
+          { name: "date", label: "Date", type: "date", required: true, half: true },
+          { name: "status", label: "Status", type: "select", options: ["Recorded", "Reviewed", "Pending"], half: true },
+          { name: "amount", label: "Amount", type: "number", required: true, half: true },
+          { name: "vat", label: "Tax Amount", type: "number", required: true, half: true },
+        ]}
+      />
+
+      <DetailsDrawer
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail?.reference ?? ""}
+        description="Sales record details"
+        rows={
+          detail
+            ? [
+                { label: "Customer", value: detail.customer },
+                { label: "Date", value: detail.date },
+                { label: "Amount", value: formatCurrency(detail.amount) },
+                { label: "Tax amount", value: formatCurrency(detail.vat) },
+                { label: "Net of tax", value: formatCurrency(detail.amount - detail.vat) },
+                { label: "Status", value: <StatusBadge value={detail.status} /> },
+              ]
+            : []
+        }
+        footer={
+          detail ? (
+            <>
+              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Edit</Button>
+              <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
+            </>
+          ) : null
+        }
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete sales record"
+        description={`${pendingDelete?.reference ?? ""} will be removed from your tax register.`}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => { if (pendingDelete) { deleteSale(pendingDelete.id); toast.success("Sales record deleted"); } }}
+      />
+    </TaxWorkspace>
   );
 }
