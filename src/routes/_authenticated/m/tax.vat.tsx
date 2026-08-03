@@ -101,7 +101,7 @@ function VatPage() {
         onClose={() => setFormOpen(false)}
         onSubmit={submit}
         fields={[
-          { name: "period", label: "Period", type: "text", required: true, placeholder: "Q3 2026", half: true },
+          { name: "period", label: "Period", type: "text", required: true, half: true },
           { name: "status", label: "Filing status", type: "select", options: ["Draft", "Pending", "Filed"], half: true },
           { name: "outputVat", label: "Output VAT", type: "number", required: true, half: true },
           { name: "inputVat", label: "Input VAT", type: "number", required: true, half: true },
