@@ -6,7 +6,6 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { money } from "@/lib/format";
-import sunsetBg from "@/assets/sunset-bg.jpg";
 
 export const Route = createFileRoute("/_authenticated/m/crm/")({ component: CrmHub });
 
@@ -60,11 +59,6 @@ function CrmHub() {
   return (
     <div
       className="relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden text-white"
-      style={{
-        backgroundImage: `linear-gradient(180deg, rgba(14,14,14,0.85) 0%, rgba(14,14,14,0.6) 40%, rgba(14,14,14,0.3) 70%, rgba(14,14,14,0.9) 100%), url(${sunsetBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center bottom",
-      }}
     >
       <div className="mx-auto max-w-md md:max-w-6xl px-5 md:px-10 pb-28 md:pb-12 pt-6 md:pt-10">
         <div className="flex items-center gap-3">
@@ -142,7 +136,7 @@ function CrmHub() {
         </button>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
           <BottomBtn label="Home" icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
           <BottomBtn label="Stock" icon={Package} onClick={() => navigate({ to: "/m/inventory" })} />

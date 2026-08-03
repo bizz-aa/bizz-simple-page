@@ -98,8 +98,10 @@ function Dashboard() {
               <button
                 key={t.label}
                 onClick={() => { setTab(t.label); navigate({ to: t.to as any }); }}
-                className={`relative min-w-0 truncate rounded-xl px-2 py-2.5 font-semibold tracking-wide transition md:py-3 ${
-                  active ? "text-amber-400" : "text-white/55 hover:text-white/85"
+                className={`relative min-w-0 truncate rounded-xl border px-2 py-2.5 font-semibold tracking-wide backdrop-blur-xl transition md:py-3 ${
+                  active
+                    ? "border-amber-300/50 bg-amber-400/25 text-amber-300 shadow-lg shadow-amber-400/20"
+                    : "border-amber-300/30 bg-amber-400/15 text-amber-400/90 hover:bg-amber-400/25"
                 }`}
               >
                 {t.label}
@@ -111,7 +113,7 @@ function Dashboard() {
           })}
         </div>
 
-        <div className="mt-6 grid min-w-0 gap-5 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:gap-8">
+        <div className="mt-6 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-8">
           {/* Circular ring */}
           <div className="flex justify-center">
             <div className="relative grid h-48 w-48 sm:h-60 sm:w-60 md:h-72 md:w-72 place-items-center">
@@ -192,7 +194,7 @@ function Dashboard() {
       />
 
       {/* Bottom Nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-black/80 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-black/80 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
           <BottomBtn label="Home" active icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
           <BottomBtn label="Stock" icon={Package} onClick={() => navigate({ to: "/m/inventory" })} />

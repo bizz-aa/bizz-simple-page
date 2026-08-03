@@ -5,7 +5,6 @@ import {
   BarChart3, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import sunsetBg from "@/assets/sunset-bg.jpg";
 
 export const Route = createFileRoute("/_authenticated/m/finance")({ component: FinanceHub });
 
@@ -23,11 +22,6 @@ function FinanceHub() {
   return (
     <div
       className="relative -m-6 min-h-[calc(100vh-4rem)] overflow-hidden text-white"
-      style={{
-        backgroundImage: `linear-gradient(180deg, rgba(14,14,14,0.85) 0%, rgba(14,14,14,0.6) 40%, rgba(14,14,14,0.3) 70%, rgba(14,14,14,0.9) 100%), url(${sunsetBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center bottom",
-      }}
     >
       <div className="mx-auto max-w-md md:max-w-6xl px-5 md:px-10 pb-28 md:pb-12 pt-6 md:pt-10">
         {/* Header */}
@@ -77,7 +71,7 @@ function FinanceHub() {
       </div>
 
       {/* Bottom Nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
           <BottomBtn label="Home" icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
           <BottomBtn label="Sales" icon={ShoppingCart} onClick={() => navigate({ to: "/m/sales" })} />
