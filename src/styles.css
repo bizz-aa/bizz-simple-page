@@ -128,8 +128,8 @@
   box-shadow: var(--shadow-glow);
 }
 
-/* Page transitions: the wrapper itself does NOT animate (that caused the
-   flash / double fade). Only its children drift in, gently and staggered. */
+/* Keep the route wrapper visible so navigation never flashes. Individual
+   sections and repeated items reveal progressively instead. */
 .page-transition {
   animation: none;
 }
@@ -138,8 +138,8 @@
 @keyframes content-drift {
   from {
     opacity: 0;
-    transform: translate3d(0, 14px, 0);
-    filter: blur(3px);
+    transform: translate3d(0, 24px, 0);
+    filter: blur(4px);
   }
   60% {
     filter: blur(0);
@@ -151,21 +151,39 @@
   }
 }
 .page-transition > * {
-  animation: content-drift 1.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation: none;
+}
+
+/* A route normally renders one page root. Reveal that root's sections rather
+   than fading the whole page in and out. */
+.page-transition > * > * {
+  animation: content-drift 2.2s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   will-change: opacity, transform;
 }
-.page-transition > *:nth-child(1) { animation-delay: 0.04s; }
-.page-transition > *:nth-child(2) { animation-delay: 0.22s; }
-.page-transition > *:nth-child(3) { animation-delay: 0.4s; }
-.page-transition > *:nth-child(4) { animation-delay: 0.58s; }
-.page-transition > *:nth-child(5) { animation-delay: 0.76s; }
-.page-transition > *:nth-child(6) { animation-delay: 0.94s; }
-.page-transition > *:nth-child(n + 7) { animation-delay: 1.1s; }
+.page-transition > * > *:nth-child(1) { animation-delay: 0.12s; }
+.page-transition > * > *:nth-child(2) { animation-delay: 0.48s; }
+.page-transition > * > *:nth-child(3) { animation-delay: 0.84s; }
+.page-transition > * > *:nth-child(4) { animation-delay: 1.2s; }
+.page-transition > * > *:nth-child(5) { animation-delay: 1.56s; }
+.page-transition > * > *:nth-child(6) { animation-delay: 1.92s; }
+.page-transition > * > *:nth-child(n + 7) { animation-delay: 2.28s; }
 
-
+/* Cards and rows inside grids/lists continue loading one after another. */
+.page-transition :is(.grid, [role="list"]) > * {
+  animation: content-drift 1.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  will-change: opacity, transform;
+}
+.page-transition :is(.grid, [role="list"]) > *:nth-child(1) { animation-delay: 0.3s; }
+.page-transition :is(.grid, [role="list"]) > *:nth-child(2) { animation-delay: 0.52s; }
+.page-transition :is(.grid, [role="list"]) > *:nth-child(3) { animation-delay: 0.74s; }
+.page-transition :is(.grid, [role="list"]) > *:nth-child(4) { animation-delay: 0.96s; }
+.page-transition :is(.grid, [role="list"]) > *:nth-child(5) { animation-delay: 1.18s; }
+.page-transition :is(.grid, [role="list"]) > *:nth-child(6) { animation-delay: 1.4s; }
+.page-transition :is(.grid, [role="list"]) > *:nth-child(n + 7) { animation-delay: 1.62s; }
 
 @media (prefers-reduced-motion: reduce) {
   .page-transition,
+  .page-transition *,
   .page-transition > * { animation: none; }
 }
 
