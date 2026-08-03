@@ -2,7 +2,8 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowLeft, ChevronRight, Download, Filter, Inbox, Pencil, Plus, Search, Trash2,
+  ArrowLeft, ChevronRight, Download, Filter, Home, Inbox, MoreHorizontal, Package,
+  Pencil, Plus, Scan, Search, ShoppingCart, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -382,4 +383,34 @@ export function exportCsv(filename: string, headers: string[], rows: (string | n
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+/* ------------------------------- bottom nav ------------------------------- */
+
+export function TaxBottomNav() {
+  const items = [
+    { label: "Home", icon: Home, to: "/dashboard" },
+    { label: "Sales", icon: ShoppingCart, to: "/m/sales" },
+    { label: "Scan", icon: Scan, to: "/pos", big: true },
+    { label: "Stock", icon: Package, to: "/m/inventory" },
+    { label: "More", icon: MoreHorizontal, to: "/m/admin" },
+  ];
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/50 backdrop-blur-xl lg:hidden">
+      <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
+        {items.map((item) => (
+          <Link key={item.label} to={item.to} className="flex flex-col items-center gap-1">
+            <span
+              className={`grid place-items-center rounded-full transition ${
+                item.big ? "-mt-6 h-14 w-14 bg-amber-500 text-white shadow-lg shadow-amber-500/40" : "h-10 w-10 bg-white/10 text-white/70"
+              }`}
+            >
+              <item.icon className={item.big ? "h-6 w-6" : "h-5 w-5"} />
+            </span>
+            <span className="text-[10px] text-white/60">{item.label}</span>
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
 }
