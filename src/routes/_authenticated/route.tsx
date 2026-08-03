@@ -132,7 +132,7 @@ function AuthedLayout() {
         </nav>
       </aside>
 
-      <div className="relative z-10 flex h-screen flex-1 flex-col overflow-y-auto">
+      <div id="app-scroll" className="relative z-10 flex h-screen flex-1 flex-col overflow-y-auto">
         <header className="sticky top-0 z-50 border-b border-white/5 bg-black/40 px-4 py-4 backdrop-blur-xl md:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
