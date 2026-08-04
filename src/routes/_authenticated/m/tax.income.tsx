@@ -1,136 +1,225 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Coins, TrendingUp, AlertTriangle } from "lucide-react";
 import { useState } from "react";
-import { TaxLayout } from "@/components/tax-layout";
-import { useTaxModule, formatCurrency } from "@/components/tax-module-provider";
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { InsightPanel, ProgressBar, StatusPill } from "@/components/tax-workspace-ui";
+import { Coins, Plus, ShieldCheck, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useTaxModule, formatCurrency, type IncomeTaxRecord } from "@/components/tax-module-provider";
+import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
+import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
-export const Route = createFileRoute("/_authenticated/m/tax/income")({ component: IncomeTaxHub });
+export const Route = createFileRoute("/_authenticated/m/tax/income")({ component: IncomeTaxPage });
 
-function IncomeTaxHub() {
-  const { metrics } = useTaxModule();
-  const [projectedAnnualProfit, setProjectedAnnualProfit] = useState<number>(metrics.currentProfit);
-  const [taxRate, setTaxRate] = useState<number>(30);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+function IncomeTaxPage() {
+  const {
+    metrics, incomeTax, saveIncomeTax, deleteIncomeTax,
+    taxRate, setTaxRate, projectedAnnualProfit, setProjectedAnnualProfit,
+  } = useTaxModule();
 
-  const actualProfit = metrics.currentProfit;
-  const completion = Math.min(100, Math.max(0, Math.round((actualProfit / Math.max(1, projectedAnnualProfit)) * 100)));
+  const [editing, setEditing] = useState<IncomeTaxRecord | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [detail, setDetail] = useState<IncomeTaxRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<IncomeTaxRecord | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const openCreate = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (row: IncomeTaxRecord) => { setEditing(row); setFormOpen(true); };
+
+  const currentProfit = metrics.currentProfit;
   const estimatedTax = projectedAnnualProfit * (taxRate / 100);
-  const currentTrend = Math.round(projectedAnnualProfit * (1 + Math.max(0.1, completion / 100)));
-  const expectedTax = currentTrend * (taxRate / 100);
-  const taxDifference = expectedTax - estimatedTax;
+  const paid = incomeTax.filter((row) => row.paymentStatus === "Paid").reduce((sum, row) => sum + row.amount, 0);
+  const completion = Math.min(100, Math.round((currentProfit / Math.max(1, projectedAnnualProfit)) * 100));
+  const shortfall = Math.max(0, estimatedTax - paid);
 
-  const riskState =
-    taxDifference > estimatedTax * 0.2
-      ? { label: "HIGH RISK", tone: "rose" as const, bar: "from-rose-500 to-orange-400", text: "text-rose-200" }
-      : taxDifference > estimatedTax * 0.08
-        ? { label: "WARNING", tone: "amber" as const, bar: "from-amber-400 to-amber-300", text: "text-amber-200" }
-        : { label: "SAFE", tone: "emerald" as const, bar: "from-emerald-400 to-emerald-300", text: "text-emerald-200" };
+  const risk =
+    metrics.overdue > 0
+      ? { label: "High", tone: "from-rose-500 to-orange-400", note: "You have overdue filings in the tax calendar." }
+      : shortfall > estimatedTax * 0.5
+        ? { label: "Medium", tone: "from-amber-400 to-amber-300", note: "More than half of the estimated tax is still unpaid." }
+        : { label: "Low", tone: "from-emerald-400 to-emerald-300", note: "Provisional payments are on track." };
+
+  const submit = (value: Record<string, FieldValue>) => {
+    const profitBase = num(value.profitBase);
+    const rate = num(value.taxRate) || taxRate;
+    saveIncomeTax(
+      {
+        period: str(value.period),
+        installment: str(value.installment),
+        profitBase,
+        taxRate: rate,
+        amount: Math.round((profitBase * (rate / 100)) / 4),
+        dueDate: str(value.dueDate),
+        paymentStatus: str(value.paymentStatus) as IncomeTaxRecord["paymentStatus"],
+        status: str(value.status) as IncomeTaxRecord["status"],
+      },
+      editing?.id,
+    );
+    toast.success(editing ? "Installment updated" : "Installment created");
+  };
+
+  const recommendations = [
+    shortfall > 0
+      ? `Set aside ${formatCurrency(shortfall)} before the next provisional due date.`
+      : "Provisional tax is fully covered for the current estimate.",
+    metrics.deductibleExpenses < metrics.expenseTotal
+      ? "Attach receipts to non-deductible expenses to increase allowable deductions."
+      : "All logged expenses are deductible and documented.",
+    metrics.overdue > 0
+      ? "Clear overdue obligations in the Tax Calendar to reduce penalty exposure."
+      : "No overdue obligations — keep reminders enabled in the Tax Calendar.",
+  ];
 
   return (
-    <TaxLayout
+    <TaxWorkspace
       title="Income Tax"
-      subtitle="Live view of tax health, risk and forecast"
-      headerIcon={Coins}
-      backTo="/m/tax"
-      showBottomNav={false}
-      cards={[
-        { label: "Projected Profit", icon: TrendingUp, onClick: () => setIsDrawerOpen(true) },
-      ]}
-      sections={[]}
+      subtitle="Corporate income tax position and provisional installments"
+      icon={Coins}
+      actions={
+        <>
+          <Button size="sm" variant="outline" className="h-9 border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => setSettingsOpen(true)}>
+            Assumptions
+          </Button>
+          <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
+            <Plus className="mr-1.5 h-4 w-4" /> New installment
+          </Button>
+        </>
+      }
     >
-      <div className="mt-8">
-        <InsightPanel title="Income Tax Snapshot" icon={Coins} tone="slate" action={<StatusPill label={riskState.label} tone={riskState.tone} />}>
-          <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.24em] text-white/55">Projected Annual Profit</p>
-                <p className="mt-2 font-display text-3xl font-semibold text-white">{formatCurrency(projectedAnnualProfit)}</p>
-              </div>
-              <div className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm font-semibold text-emerald-200">
-                {completion}% completed
-              </div>
-            </div>
+      <SummaryStrip
+        items={[
+          { label: "Projected Annual Profit", value: formatCurrency(projectedAnnualProfit), hint: `${completion}% realised`, accent: true },
+          { label: "Current Profit", value: formatCurrency(currentProfit), hint: "Sales − purchases − expenses − depreciation" },
+          { label: `Estimated Tax (${taxRate}%)`, value: formatCurrency(estimatedTax), hint: `${formatCurrency(paid)} already paid` },
+          { label: "Tax Risk", value: risk.label, hint: risk.note },
+        ]}
+      />
 
-            <div className="mt-4 h-2.5 rounded-full bg-white/10">
-              <div className={`h-2.5 rounded-full bg-gradient-to-r ${riskState.bar}`} style={{ width: `${completion}%` }} />
-            </div>
-
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-white/55">Actual Profit</p>
-                <p className="mt-2 font-display text-2xl font-semibold text-white">{formatCurrency(actualProfit)}</p>
-                <p className="mt-1 text-sm text-white/65">Current business performance</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-white/55">Estimated Income Tax ({taxRate}%)</p>
-                <p className="mt-2 font-display text-2xl font-semibold text-white">{formatCurrency(estimatedTax)}</p>
-                <p className="mt-1 text-sm text-white/65">Risk level is {riskState.label.toLowerCase()}</p>
-              </div>
-            </div>
+      <section className="rounded-3xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-white">
+            <TrendingUp className="h-4 w-4 text-amber-400" /> Profit trend towards projection
           </div>
+          <span className="text-sm text-white/60">{completion}% of projected profit realised</span>
+        </div>
+        <div className="mt-4 h-2.5 rounded-full bg-white/10">
+          <div className={`h-2.5 rounded-full bg-gradient-to-r ${risk.tone}`} style={{ width: `${Math.max(4, completion)}%` }} />
+        </div>
+        <ul className="mt-5 space-y-2">
+          {recommendations.map((item) => (
+            <li key={item} className="flex items-start gap-2 text-sm text-white/70">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
 
-          <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <ProgressBar label="Completion against projection" value={completion} tone="emerald" />
-          </div>
-        </InsightPanel>
-      </div>
+      <TaxTable
+        rows={incomeTax}
+        searchKeys={(row) => `${row.period} ${row.installment} ${row.status} ${row.paymentStatus}`}
+        filter={{
+          label: "Status",
+          options: [
+            { value: "Filed", label: "Filed" },
+            { value: "Draft", label: "Draft" },
+            { value: "Unpaid", label: "Unpaid" },
+          ],
+          match: (row, value) => (value === "Unpaid" ? row.paymentStatus === "Unpaid" : row.status === value),
+        }}
+        columns={[
+          { key: "installment", label: "Installment", render: (row) => <span className="font-medium text-white">{row.installment}</span> },
+          { key: "period", label: "Year", hideOnMobile: true },
+          { key: "profitBase", label: "Profit base", render: (row) => formatCurrency(row.profitBase), hideOnMobile: true },
+          { key: "amount", label: "Tax due", render: (row) => formatCurrency(row.amount) },
+          { key: "dueDate", label: "Due date" },
+          { key: "paymentStatus", label: "Payment", render: (row) => <StatusBadge value={row.paymentStatus} /> },
+          { key: "status", label: "Filing", render: (row) => <StatusBadge value={row.status} /> },
+        ]}
+        onRowClick={setDetail}
+        onEdit={openEdit}
+        onDelete={setPendingDelete}
+        onExport={(rows) =>
+          exportCsv(
+            "income-tax-installments.csv",
+            ["Installment", "Year", "Profit base", "Rate", "Tax due", "Due date", "Payment", "Filing"],
+            rows.map((row) => [row.installment, row.period, row.profitBase, row.taxRate, row.amount, row.dueDate, row.paymentStatus, row.status]),
+          )
+        }
+        addLabel="New installment"
+        onAdd={openCreate}
+        empty={{ title: "No installments", description: "Add provisional tax installments so they appear in the tax calendar.", icon: Coins }}
+      />
 
-      <div className="mt-6">
-        <InsightPanel title="Intelligence Message" icon={AlertTriangle} tone="slate">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-            <div className="flex items-start gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/15 bg-white/10 text-lg text-white/80">
-                ⚠
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white">Projected annual profit {formatCurrency(projectedAnnualProfit)}</p>
-                <p className="mt-1 text-sm text-white/70">Current trend shows {formatCurrency(currentTrend)}</p>
-                <p className="mt-1 text-sm text-white/70">Estimated tax will increase by {formatCurrency(Math.abs(taxDifference))}</p>
-              </div>
-            </div>
-          </div>
-        </InsightPanel>
-      </div>
+      <RecordDialog
+        open={formOpen}
+        title={editing ? "Edit installment" : "New installment"}
+        description="Each installment carries a due date used by the tax calendar."
+        submitLabel={editing ? "Update" : "Create"}
+        initialValue={editing ? { ...editing } : { period: String(new Date().getFullYear()), taxRate, profitBase: projectedAnnualProfit }}
+        onClose={() => setFormOpen(false)}
+        onSubmit={submit}
+        fields={[
+          { name: "period", label: "Tax year", type: "text", required: true, half: true },
+          { name: "installment", label: "Installment", type: "select", options: ["Q1 provisional", "Q2 provisional", "Q3 provisional", "Q4 provisional", "Final return"], half: true },
+          { name: "profitBase", label: "Profit base", type: "number", required: true, half: true },
+          { name: "taxRate", label: "Tax rate (%)", type: "number", required: true, half: true },
+          { name: "dueDate", label: "Due date", type: "date", required: true, half: true },
+          { name: "paymentStatus", label: "Payment status", type: "select", options: ["Unpaid", "Paid"], half: true },
+          { name: "status", label: "Filing status", type: "select", options: ["Draft", "Pending", "Filed"], half: true },
+        ]}
+      />
 
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <DrawerContent className="mx-auto max-w-xl rounded-t-3xl rounded-b-3xl bg-background text-foreground sm:mx-4 sm:my-6 sm:max-h-[85vh] sm:overflow-y-auto sm:rounded-3xl">
-          <DrawerHeader className="px-4 pb-2 pt-4 text-left">
-            <DrawerTitle className="text-foreground">Input Business Data</DrawerTitle>
-            <DrawerDescription className="text-muted-foreground">Adjust the tax rate. Profit values are derived automatically from your records.</DrawerDescription>
-          </DrawerHeader>
-          <div className="space-y-4 px-4 pb-6">
-            <div className="rounded-2xl border border-border/70 bg-muted/30 p-3 text-sm text-muted-foreground">
-              <p className="font-semibold text-foreground">Auto-calculated profit</p>
-              <p className="mt-1">Actual profit is calculated from EFD sales minus purchases, expenses, and asset depreciation.</p>
-            </div>
-            <label className="block text-sm text-muted-foreground">
-              <span className="mb-1 block text-[11px] uppercase tracking-[0.24em] text-muted-foreground/80">Projected annual profit</span>
-              <input
-                type="number"
-                value={projectedAnnualProfit}
-                onChange={(event) => setProjectedAnnualProfit(Number(event.target.value))}
-                className="w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground outline-none ring-0"
-              />
-            </label>
-            <label className="block text-sm text-muted-foreground">
-              <span className="mb-1 block text-[11px] uppercase tracking-[0.24em] text-muted-foreground/80">Tax rate (%)</span>
-              <input
-                type="number"
-                value={taxRate}
-                onChange={(event) => setTaxRate(Number(event.target.value))}
-                className="w-full rounded-2xl border border-border bg-background px-3 py-2 text-foreground outline-none ring-0"
-              />
-            </label>
-            <DrawerClose asChild>
-              <button className="w-full rounded-2xl bg-primary px-4 py-2 font-semibold text-primary-foreground">
-                Save changes
-              </button>
-            </DrawerClose>
-          </div>
-        </DrawerContent>
-      </Drawer>
-    </TaxLayout>
+      <RecordDialog
+        open={settingsOpen}
+        title="Income tax assumptions"
+        description="Used for the estimated tax and risk indicator."
+        submitLabel="Save"
+        initialValue={{ projectedAnnualProfit, taxRate }}
+        onClose={() => setSettingsOpen(false)}
+        onSubmit={(value) => {
+          setProjectedAnnualProfit(num(value.projectedAnnualProfit));
+          setTaxRate(num(value.taxRate) || 30);
+          toast.success("Assumptions updated");
+        }}
+        fields={[
+          { name: "projectedAnnualProfit", label: "Projected annual profit", type: "number", required: true, half: true },
+          { name: "taxRate", label: "Tax rate (%)", type: "number", required: true, half: true },
+        ]}
+      />
+
+      <DetailsDrawer
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail ? `${detail.installment} ${detail.period}` : ""}
+        description="Provisional income tax installment"
+        rows={
+          detail
+            ? [
+                { label: "Profit base", value: formatCurrency(detail.profitBase) },
+                { label: "Tax rate", value: `${detail.taxRate}%` },
+                { label: "Tax due", value: formatCurrency(detail.amount) },
+                { label: "Due date", value: detail.dueDate },
+                { label: "Payment", value: <StatusBadge value={detail.paymentStatus} /> },
+                { label: "Filing", value: <StatusBadge value={detail.status} /> },
+              ]
+            : []
+        }
+        footer={
+          detail ? (
+            <>
+              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Edit</Button>
+              <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
+            </>
+          ) : null
+        }
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete installment"
+        description={`${pendingDelete?.installment ?? ""} will be removed from the tax calendar.`}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => { if (pendingDelete) { deleteIncomeTax(pendingDelete.id); toast.success("Installment deleted"); } }}
+      />
+    </TaxWorkspace>
   );
 }
