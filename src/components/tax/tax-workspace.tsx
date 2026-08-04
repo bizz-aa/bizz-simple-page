@@ -27,7 +27,7 @@ export function TaxWorkspace({
 }) {
   return (
     <div className="mx-auto w-full max-w-6xl pb-24 lg:pb-8">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <Link
             to="/m/tax"
@@ -39,13 +39,16 @@ export function TaxWorkspace({
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-amber-400/15">
             <Icon className="h-5 w-5 text-amber-400" />
           </div>
-          <div className="min-w-0">
-            <h1 className="truncate font-display text-xl font-bold tracking-tight text-white sm:text-2xl">{title}</h1>
-            <p className="truncate text-sm text-white/60">{subtitle}</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate font-display text-lg font-bold tracking-tight text-white sm:text-2xl">{title}</h1>
+            <p className="line-clamp-2 text-xs leading-snug text-white/60 sm:truncate sm:text-sm">{subtitle}</p>
           </div>
         </div>
-        {actions ? <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">{actions}</div> : null}
+        {actions ? (
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">{actions}</div>
+        ) : null}
       </header>
+
       <div className="mt-6 space-y-6">{children}</div>
     </div>
   );
