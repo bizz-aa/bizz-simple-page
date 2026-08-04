@@ -389,16 +389,6 @@ export function exportCsv(filename: string, headers: string[], rows: (string | n
   URL.revokeObjectURL(url);
 }
 
-/* ------------------------------- bottom nav ------------------------------- */
-
 export function TaxBottomNav() {
-  const items = [
-    { label: "Home", icon: Home, to: "/dashboard" },
-    { label: "Sales", icon: ShoppingCart, to: "/m/sales" },
-    { label: "Scan", icon: Scan, to: "/pos", big: true },
-    { label: "Stock", icon: Package, to: "/m/inventory" },
-    { label: "More", icon: MoreHorizontal, to: "/m/admin" },
-  ];
-  return (
-  );
+  return null;
 }
