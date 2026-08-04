@@ -52,8 +52,6 @@ function TaxOverview() {
     { label: "Withholding Tax", icon: HandCoins, to: "/m/tax/withholding" },
     { label: "Capital Assets", icon: Building2, to: "/m/tax/assets" },
     { label: "Documents", icon: FolderArchive, to: "/m/tax/documents" },
-    { label: "Import Center", icon: Upload, to: "/m/tax/import" },
-    { label: "Tax Reports", icon: BarChart3, to: "/m/tax/reports" },
   ];
 
   return (
