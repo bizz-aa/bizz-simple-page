@@ -147,8 +147,14 @@ function AuthedLayout() {
       </aside>
 
       <div id="app-scroll" className="relative z-10 flex h-screen flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-50 border-b border-white/5 bg-black/40 px-4 py-4 backdrop-blur-xl md:px-6">
-          <div className="flex items-center justify-between gap-3">
+        <header className="sticky top-0 z-50 overflow-hidden border-b border-white/5 px-4 py-4 backdrop-blur-xl md:px-6">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: "url(/header.png)" }}
+          />
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-black/70 via-black/45 to-black/60" />
+          <div className="relative flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="truncate font-display text-xl font-bold tracking-tight text-white md:text-2xl">
                 {heading.title}
