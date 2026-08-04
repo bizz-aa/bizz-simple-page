@@ -18,8 +18,7 @@ const WORKSPACES = [
   { label: "Withholding Tax", icon: HandCoins, to: "/m/tax/withholding", hint: "Certificates" },
   { label: "Capital Assets", icon: Building2, to: "/m/tax/assets", hint: "Depreciation" },
   { label: "Document Center", icon: FolderArchive, to: "/m/tax/documents", hint: "Tax archive" },
-  { label: "Import Center", icon: Upload, to: "/m/tax/import", hint: "Excel & CSV" },
-  { label: "Tax Reports", icon: BarChart3, to: "/m/tax/reports", hint: "Export & print" },
+  { label: "Tax Reports", icon: BarChart3, to: "/m/tax/reports", hint: "Full report PDF" },
 ];
 
 function TaxHub() {
