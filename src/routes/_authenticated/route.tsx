@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useRouter, useRouterState, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, ShoppingCart, Package, Wallet, Users, BarChart3, Settings,
@@ -11,6 +11,11 @@ import desertSunsetBg from "@/assets/desert-sunset-bg.jpg";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/auth" });
+    return { user: data.user };
+  },
   component: AuthedLayout,
 });
 
@@ -79,7 +84,7 @@ function AuthedLayout() {
     qc.clear();
     await supabase.auth.signOut();
     toast.success("Signed out");
-    router.navigate({ to: "/", replace: true });
+    router.navigate({ to: "/auth", replace: true });
   };
 
   return (
