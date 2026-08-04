@@ -36,8 +36,8 @@ function TaxSalesPage() {
 
   return (
     <TaxWorkspace
-      title="Tax Sales"
-      subtitle="Taxable sales and output VAT register"
+      title="EFD Sales"
+      subtitle="Sales captured through the EFD register"
       icon={ShoppingCart}
       actions={
         <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
@@ -56,7 +56,7 @@ function TaxSalesPage() {
 
       <TaxTable
         rows={sales}
-        searchKeys={(row) => `${row.reference} ${row.customer} ${row.date} ${row.status}`}
+        searchKeys={(row) => `${row.customer} ${row.date} ${row.status}`}
         filter={{
           label: "Status",
           options: [
@@ -67,16 +67,13 @@ function TaxSalesPage() {
           match: (row, value) => row.status === value,
         }}
         columns={[
-          { key: "reference", label: "Reference", render: (row) => <span className="font-medium text-white">{row.reference}</span> },
-          { key: "customer", label: "Customer" },
+          { key: "customer", label: "Customer", render: (row) => <span className="font-medium text-white">{row.customer}</span> },
           { key: "date", label: "Date", hideOnMobile: true },
           { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
           { key: "vat", label: "Tax Amount", render: (row) => formatCurrency(row.vat), hideOnMobile: true },
           { key: "status", label: "Status", render: (row) => <StatusBadge value={row.status} /> },
         ]}
         onRowClick={setDetail}
-        onEdit={openEdit}
-        onDelete={setPendingDelete}
         onExport={(rows) =>
           exportCsv(
             "tax-sales.csv",
@@ -110,7 +107,7 @@ function TaxSalesPage() {
       <DetailsDrawer
         open={Boolean(detail)}
         onClose={() => setDetail(null)}
-        title={detail?.reference ?? ""}
+        title={detail?.customer ?? "Sales record"}
         description="Sales record details"
         rows={
           detail

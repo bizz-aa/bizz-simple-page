@@ -234,10 +234,11 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
     const purchaseDeduction = purchases.filter((item) => item.deductible).reduce((sum, item) => sum + item.amount, 0);
     const expenseTotal = expenses.reduce((sum, item) => sum + item.amount, 0);
     const deductibleExpenses = expenses.filter((item) => item.deductible).reduce((sum, item) => sum + item.amount, 0);
+    const depreciationTotal = assets.reduce((sum, item) => sum + item.depreciation, 0);
     const outputVat = salesVat;
     const inputVat = purchases.reduce((sum, item) => sum + (item.deductible ? item.amount * 0.18 : 0), 0);
     const vatPayable = Math.max(0, outputVat - inputVat);
-    const currentProfit = Math.max(0, salesTotal - purchaseDeduction - deductibleExpenses);
+    const currentProfit = Math.max(0, salesTotal - purchaseTotal - expenseTotal - depreciationTotal);
     const projectedProfit = currentProfit * 1.25;
     const estimatedTax = projectedProfit * 0.3;
 
@@ -252,7 +253,7 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
       salesTotal, salesVat, purchaseTotal, purchaseDeduction, expenseTotal, deductibleExpenses,
       outputVat, inputVat, vatPayable, currentProfit, projectedProfit, estimatedTax, complianceScore, riskLevel,
     };
-  }, [sales, purchases, expenses, documents, vatReturns]);
+  }, [sales, purchases, expenses, assets, documents, vatReturns]);
 
   const upsert = useCallback(
     <T extends { id: number }>(setter: React.Dispatch<React.SetStateAction<T[]>>) =>

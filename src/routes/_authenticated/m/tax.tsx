@@ -1,15 +1,15 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   Landmark, ShoppingCart, ShoppingBag, Receipt, Percent, Coins, HandCoins,
-  Building2, FolderArchive, Upload, BarChart3, ShieldCheck, AlertTriangle,
+  Building2, FolderArchive, Upload, BarChart3, ChevronRight,
 } from "lucide-react";
-import { TaxModuleProvider, formatCurrency, useTaxModule } from "@/components/tax-module-provider";
-import { SummaryStrip, RelatedList, StatusBadge, TaxBottomNav } from "@/components/tax/tax-workspace";
+import { TaxModuleProvider, useTaxModule } from "@/components/tax-module-provider";
+import { TaxBottomNav } from "@/components/tax/tax-workspace";
 
 export const Route = createFileRoute("/_authenticated/m/tax")({ component: TaxHub });
 
 const WORKSPACES = [
-  { label: "Tax Sales", icon: ShoppingCart, to: "/m/tax/sales", hint: "Taxable sales & VAT" },
+  { label: "EFD Sales", icon: ShoppingCart, to: "/m/tax/sales", hint: "Taxable sales & VAT" },
   { label: "Purchases", icon: ShoppingBag, to: "/m/tax/purchases", hint: "Suppliers & deductions" },
   { label: "Expenses", icon: Receipt, to: "/m/tax/expenses", hint: "Deductible spending" },
   { label: "VAT", icon: Percent, to: "/m/tax/vat", hint: "Returns & balance" },
@@ -36,76 +36,84 @@ function TaxHub() {
 }
 
 function TaxOverview() {
-  const { metrics, vatReturns, documents, sales, expenses } = useTaxModule();
-  const openReturns = vatReturns.filter((item) => item.status !== "Filed");
-  const pendingDocs = documents.filter((item) => item.status === "Pending");
+  useTaxModule();
+
+  const cards = [
+    { label: "EFD Sales", icon: ShoppingCart, to: "/m/tax/sales" },
+    { label: "Purchases", icon: ShoppingBag, to: "/m/tax/purchases" },
+    { label: "Expenses", icon: Receipt, to: "/m/tax/expenses" },
+    { label: "VAT", icon: Percent, to: "/m/tax/vat" },
+  ];
+
+  const moreItems = [
+    { label: "Income Tax", icon: Coins, to: "/m/tax/income" },
+    { label: "Withholding Tax", icon: HandCoins, to: "/m/tax/withholding" },
+    { label: "Capital Assets", icon: Building2, to: "/m/tax/assets" },
+    { label: "Documents", icon: FolderArchive, to: "/m/tax/documents" },
+    { label: "Import Center", icon: Upload, to: "/m/tax/import" },
+    { label: "Tax Reports", icon: BarChart3, to: "/m/tax/reports" },
+  ];
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-amber-400/15">
-            <Landmark className="h-5 w-5 text-amber-400" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="truncate font-display text-xl font-bold tracking-tight sm:text-2xl">Tax Management</h1>
-            <p className="truncate text-sm text-white/60">Independent tax records, compliance and filing</p>
-          </div>
+    <div className="mx-auto max-w-md px-5 pb-28 pt-6 text-white md:max-w-6xl md:px-10 md:pb-12 md:pt-10">
+      <div className="flex items-center gap-3">
+        <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/20 bg-white/15 backdrop-blur-xl">
+          <Landmark className="h-6 w-6 text-white" />
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <StatusBadge value={`${metrics.riskLevel} risk`} />
-        </div>
-      </header>
-
-      <div className="mt-6 space-y-6">
-        <SummaryStrip
-          items={[
-            { label: "Estimated Tax", value: formatCurrency(metrics.estimatedTax), hint: "30% of projected profit", accent: true },
-            { label: "VAT Payable", value: formatCurrency(metrics.vatPayable), hint: `${openReturns.length} return(s) open` },
-            { label: "Current Profit", value: formatCurrency(metrics.currentProfit), hint: "After deductions" },
-            { label: "Compliance", value: `${metrics.complianceScore}%`, hint: `${metrics.riskLevel} risk level` },
-          ]}
-        />
-
-        <section>
-          <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.16em] text-white/60">Workspaces</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {WORKSPACES.map((workspace) => (
-              <Link
-                key={workspace.label}
-                to={workspace.to}
-                className="group rounded-2xl border border-white/15 bg-white/[0.06] p-4 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-amber-300/40 hover:bg-amber-400/10"
-              >
-                <span className="grid h-10 w-10 place-items-center rounded-xl border border-amber-300/25 bg-amber-400/15">
-                  <workspace.icon className="h-5 w-5 text-amber-400" />
-                </span>
-                <p className="mt-3 truncate text-sm font-semibold text-white">{workspace.label}</p>
-                <p className="truncate text-xs text-white/50">{workspace.hint}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <RelatedList
-            title="Needs attention"
-            items={[
-              { label: "VAT returns not filed", value: String(openReturns.length), icon: AlertTriangle, to: "/m/tax/vat" },
-              { label: "Documents pending review", value: String(pendingDocs.length), icon: FolderArchive, to: "/m/tax/documents" },
-              { label: "Expenses without receipt", value: String(expenses.filter((item) => !item.receipt).length), icon: Receipt, to: "/m/tax/expenses" },
-            ]}
-          />
-          <RelatedList
-            title="Position"
-            items={[
-              { label: "Output VAT", value: formatCurrency(metrics.outputVat), icon: Percent },
-              { label: "Input VAT", value: formatCurrency(metrics.inputVat), icon: Percent },
-              { label: "Taxable sales recorded", value: String(sales.length), icon: ShoppingCart, to: "/m/tax/sales" },
-              { label: "Compliance status", value: metrics.complianceScore >= 80 ? "Healthy" : "Review", icon: ShieldCheck, to: "/m/tax/reports" },
-            ]}
-          />
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight">Tax Management</h1>
+          <p className="text-sm text-white/80">Track filings, tax records and compliance</p>
         </div>
       </div>
+
+      <div className="mt-8 grid grid-cols-4 gap-4 md:gap-8">
+        {cards.map((card) => (
+          <Link
+            key={card.label}
+            to={card.to}
+            className="group flex flex-col items-center gap-3 transition hover:scale-110 md:gap-4"
+          >
+            <div className="grid h-16 w-16 place-items-center rounded-2xl border border-amber-300/30 bg-amber-400/15 backdrop-blur-xl transition group-hover:bg-amber-400/25 group-hover:shadow-lg group-hover:shadow-amber-400/20 md:h-28 md:w-28 md:rounded-3xl">
+              <card.icon className="h-6 w-6 text-amber-400 md:h-10 md:w-10" />
+            </div>
+            <span className="text-center text-[11px] font-semibold text-white md:text-sm">{card.label}</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="mt-8 rounded-3xl border border-white/30 bg-white/10 p-5 backdrop-blur-xl">
+        <div className="flex items-center gap-2">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 backdrop-blur">
+            <BarChart3 className="h-5 w-5 text-white" />
+          </div>
+          <h2 className="font-display text-lg font-bold text-white">More Options</h2>
+        </div>
+        <div className="mt-3 h-px bg-white/20" />
+        <ul className="mt-2 divide-y divide-white/20">
+          {moreItems.map((item) => (
+            <li key={item.label}>
+              <Link to={item.to} className="flex w-full items-center gap-3 py-3 text-left transition hover:bg-white/10">
+                <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-400/15 backdrop-blur">
+                  <item.icon className="h-4 w-4 text-amber-400" />
+                </div>
+                <span className="flex-1 text-[15px] font-medium text-white">{item.label}</span>
+                <ChevronRight className="h-4 w-4 text-white/60" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <Link to="/m/tax/reports" className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-white/30 bg-white/15 p-5 text-left transition hover:scale-[1.02] hover:bg-white/25">
+        <div className="grid h-12 w-12 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 backdrop-blur">
+          <BarChart3 className="h-6 w-6 text-amber-400" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-display text-lg font-bold text-white">Tax Reports</h3>
+          <p className="text-xs text-white/70">Compliance position, filings and export views</p>
+        </div>
+        <ChevronRight className="h-5 w-5 text-white/60" />
+      </Link>
     </div>
   );
 }
