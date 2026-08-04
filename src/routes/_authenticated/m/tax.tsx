@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   Landmark, ShoppingCart, ShoppingBag, Receipt, Percent, Coins, HandCoins,
-  Building2, FolderArchive, Upload, BarChart3, ChevronRight, CalendarDays, AlertTriangle,
+  Building2, FolderArchive, BarChart3, ChevronRight, CalendarDays, AlertTriangle,
 } from "lucide-react";
 import { TaxModuleProvider, useTaxModule } from "@/components/tax-module-provider";
 import { TaxBottomNav } from "@/components/tax/tax-workspace";
