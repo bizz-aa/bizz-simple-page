@@ -74,7 +74,7 @@ function Dashboard() {
   const quickActions = [
     { label: "New Sale", icon: ShoppingCart, onClick: () => toast.info("New Sale — coming soon") },
     { label: "Invoice", icon: FileText, onClick: () => toast.info("Invoice — coming soon") },
-    { label: "Customer", icon: Users, onClick: () => navigate({ to: "/m/crm/customers" }) },
+    { label: "Customers & CRM", icon: Users, onClick: () => navigate({ to: "/m/crm" }) },
     { label: "Reports", icon: BarChart3, onClick: () => navigate({ to: "/m/reports" }) },
   ] as const;
 

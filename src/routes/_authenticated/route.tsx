@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useRouter, useRouterState, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, ShoppingCart, Package, Wallet, Users, BarChart3, Settings,
@@ -8,14 +8,10 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import desertSunsetBg from "@/assets/desert-sunset-bg.jpg";
+import { MobileNav } from "@/components/mobile-nav";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
-  },
   component: AuthedLayout,
 });
 
@@ -55,17 +51,9 @@ function useHeading(pathname: string) {
 
 
 function AuthedLayout() {
-  const router = useRouter();
-  const qc = useQueryClient();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [user, setUser] = useState<{ email?: string | null } | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const heading = useHeading(pathname);
 
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-  }, []);
 
   const { data: alerts } = useQuery({
     queryKey: ["low-stock-count"],
@@ -79,13 +67,7 @@ function AuthedLayout() {
     refetchInterval: 60000,
   });
 
-  const signOut = async () => {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
-    toast.success("Signed out");
-    router.navigate({ to: "/auth", replace: true });
-  };
+
 
   return (
     <div className="relative flex min-h-screen text-foreground">
@@ -173,33 +155,19 @@ function AuthedLayout() {
                   <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-black">{alerts}</span>
                 ) : null}
               </button>
-              <div className="relative">
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="grid h-9 w-9 place-items-center rounded-full bg-amber-400 text-sm font-bold text-black transition hover:bg-amber-300"
-                  aria-label="Account menu"
-                >
-                  {(user?.email ?? "?")[0]?.toUpperCase()}
-                </button>
-                {menuOpen && (
-                  <div className="absolute right-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-white/10 bg-neutral-900 shadow-lg">
-                    <button onClick={signOut} className="flex w-full items-center gap-2 px-4 py-2 text-sm text-white hover:bg-white/10">
-                      <LogOut className="h-4 w-4" /> Sign out
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden px-3 pb-6 pt-6 sm:px-6 sm:pt-8">
+        <main className="flex-1 overflow-x-hidden px-3 pb-28 pt-6 sm:px-6 sm:pt-8 lg:pb-6">
           <div key={pathname} className="page-transition">
             <Outlet />
           </div>
         </main>
 
       </div>
+      <MobileNav />
     </div>
   );
 }
