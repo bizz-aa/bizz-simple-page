@@ -58,12 +58,7 @@ function TaxSalesPage() {
       }
     >
       <SummaryStrip
-        items={[
-          { label: "Taxable Sales", value: formatCurrency(metrics.salesTotal), hint: `${sales.length} records`, accent: true },
-          { label: "Output VAT", value: formatCurrency(metrics.salesVat), hint: "Charged to customers" },
-          { label: "Reviewed", value: String(sales.filter((row) => row.status === "Reviewed").length), hint: "Ready for filing" },
-          { label: "Pending", value: String(sales.filter((row) => row.status === "Pending").length), hint: "Needs confirmation" },
-        ]}
+        items={[{ label: "Total EFD Sales", value: formatCurrency(metrics.salesTotal), hint: `${sales.length} records`, accent: true }]}
       />
 
       <TaxTable
@@ -132,12 +127,10 @@ function TaxSalesPage() {
           </div>
         }
         fields={[
-          { name: "reference", label: "Reference", type: "text", required: true, half: true },
           { name: "customer", label: "Customer", type: "text", required: true, half: true },
           { name: "date", label: "Date", type: "date", required: true, half: true },
           { name: "status", label: "Status", type: "select", options: ["Recorded", "Reviewed", "Pending"], half: true },
           { name: "amount", label: "Amount", type: "number", required: true, half: true },
-          { name: "vat", label: "Tax Amount", type: "number", required: true, half: true },
         ]}
       />
 

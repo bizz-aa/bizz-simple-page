@@ -56,27 +56,39 @@ export function TaxWorkspace({
 
 /* --------------------------------- summary -------------------------------- */
 
-export type SummaryItem = { label: string; value: string; hint?: string; accent?: boolean };
+export type SummaryItem = { label: string; value: string; hint?: string; accent?: boolean; tone?: "default" | "success" | "warning" | "danger" };
 
 export function SummaryStrip({ items }: { items: SummaryItem[] }) {
+  const compact = items.length === 1;
+
   return (
-    <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className={`min-w-0 rounded-2xl border p-3 backdrop-blur-xl sm:p-4 ${
-            item.accent ? "border-amber-300/30 bg-amber-400/10" : "border-white/15 bg-white/[0.06]"
-          }`}
-        >
+    <section className={compact ? "flex" : "grid grid-cols-2 gap-3 xl:grid-cols-4"}>
+      {items.map((item) => {
+        const toneClass = item.tone === "danger"
+          ? "border-rose-400/30 bg-rose-500/15"
+          : item.tone === "warning"
+            ? "border-amber-400/40 bg-amber-500/20"
+            : item.tone === "success"
+              ? "border-emerald-400/50 bg-emerald-500/30"
+              : item.accent
+                ? "border-amber-300/30 bg-amber-400/10"
+                : "border-white/15 bg-white/[0.06]";
+
+        return (
+          <div
+            key={item.label}
+            className={`min-w-0 rounded-2xl border p-3 backdrop-blur-xl sm:p-4 ${compact ? "w-full max-w-xs" : ""} ${toneClass}`}
+          >
           <p className="break-words text-[10px] uppercase leading-tight tracking-[0.14em] text-white/50 sm:text-[11px] sm:tracking-[0.18em]">
             {item.label}
           </p>
           <p className="mt-2 break-words font-display text-base font-semibold leading-tight text-white sm:text-xl">
             {item.value}
           </p>
-          {item.hint ? <p className="mt-1 break-words text-[11px] leading-snug text-white/50 sm:text-xs">{item.hint}</p> : null}
-        </div>
-      ))}
+            {item.hint ? <p className="mt-1 break-words text-[11px] leading-snug text-white/50 sm:text-xs">{item.hint}</p> : null}
+          </div>
+        );
+      })}
     </section>
   );
 }

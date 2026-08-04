@@ -86,7 +86,7 @@ function AuthPage() {
         style={{ backgroundImage: `url(${desertSunsetBg})`, filter: "brightness(0.5) saturate(0.9)" }}
       />
       <div className="relative w-full max-w-sm rounded-3xl border border-white/20 bg-black/40 p-6 backdrop-blur-xl">
-        <h1 className="font-display text-2xl font-bold tracking-tight">BIZZ AUTOMATORS</h1>
+        <h1 className="font-display text-2xl font-medium tracking-[0.12em] text-white/90">BIZZ AUTOMATORS</h1>
         <p className="mt-1 text-sm text-white/70">Simplify your business.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-3">

@@ -48,12 +48,7 @@ function ExpensesPage() {
       }
     >
       <SummaryStrip
-        items={[
-          { label: "Total Expenses", value: formatCurrency(metrics.expenseTotal), hint: `${expenses.length} records`, accent: true },
-          { label: "Deductible", value: formatCurrency(metrics.deductibleExpenses), hint: "Reduces taxable profit" },
-          { label: "With Receipt", value: `${expenses.filter((row) => row.receipt).length}/${expenses.length || 0}`, hint: "Evidence attached" },
-          { label: "Pending", value: String(expenses.filter((row) => row.status === "Pending").length), hint: "Awaiting approval" },
-        ]}
+        items={[{ label: "Total Expenses", value: formatCurrency(metrics.expenseTotal), hint: `${expenses.length} records`, accent: true }]}
       />
 
       <TaxTable

@@ -11,7 +11,7 @@ import {
   useTaxModule, formatCurrency, daysUntil,
   type TaxObligation, type ObligationStatus,
 } from "@/components/tax-module-provider";
-import { DetailsDrawer, StatusBadge, SummaryStrip, TaxEmptyState, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
+import { DetailsDrawer, StatusBadge, TaxEmptyState, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
 export const Route = createFileRoute("/_authenticated/m/tax/calendar")({ component: TaxCalendarPage });
 
@@ -112,15 +112,6 @@ function TaxCalendarPage() {
         </>
       }
     >
-      <SummaryStrip
-        items={[
-          { label: "Overdue", value: String(overdue.length), hint: "Past the filing deadline", accent: overdue.length > 0 },
-          { label: "Due Soon", value: String(dueSoon.length), hint: "Within the next 7 days" },
-          { label: "Total Payable", value: formatCurrency(payable), hint: "Across unsettled obligations" },
-          { label: "Obligations", value: String(obligations.length), hint: "Generated from tax records" },
-        ]}
-      />
-
       {alerts.length > 0 && (
         <section className="rounded-3xl border border-amber-300/25 bg-amber-400/10 p-4 backdrop-blur-xl">
           <div className="flex items-center gap-2 text-sm font-semibold text-amber-200">

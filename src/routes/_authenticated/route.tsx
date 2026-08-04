@@ -95,7 +95,7 @@ function AuthedLayout() {
           <img
             src="/logo.png"
             alt="BIZZ AUTOMATORS logo"
-            className="h-32 w-32 rounded-3xl object-contain"
+            className="h-55 w-45 rounded-3xl object-contain"
           />
         </div>
         <nav className="flex-1 space-y-2 px-3 py-4">

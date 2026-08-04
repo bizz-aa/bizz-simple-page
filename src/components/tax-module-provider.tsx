@@ -504,17 +504,19 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
   }, [vatReturns, paye, withholding, incomeTax, remindersOff]);
 
   const metrics = useMemo<Metrics>(() => {
-    const salesTotal = sales.reduce((sum, item) => sum + item.amount, 0);
-    const salesVat = sales.reduce((sum, item) => sum + item.vat, 0);
-    const purchaseTotal = purchases.reduce((sum, item) => sum + item.amount, 0);
-    const purchaseDeduction = purchases.filter((item) => item.deductible).reduce((sum, item) => sum + item.amount, 0);
-    const expenseTotal = expenses.reduce((sum, item) => sum + item.amount, 0);
-    const deductibleExpenses = expenses.filter((item) => item.deductible).reduce((sum, item) => sum + item.amount, 0);
-    const depreciationTotal = assets.reduce((sum, item) => sum + item.depreciation, 0);
+    const toNumber = (value: number | null | undefined) => Number.isFinite(value as number) ? Number(value ?? 0) : 0;
+
+    const salesTotal = sales.reduce((sum, item) => sum + toNumber(item.amount), 0);
+    const salesVat = sales.reduce((sum, item) => sum + toNumber(item.vat), 0);
+    const purchaseTotal = purchases.reduce((sum, item) => sum + toNumber(item.amount), 0);
+    const purchaseDeduction = purchases.filter((item) => item.deductible).reduce((sum, item) => sum + toNumber(item.amount), 0);
+    const expenseTotal = expenses.reduce((sum, item) => sum + toNumber(item.amount), 0);
+    const deductibleExpenses = expenses.filter((item) => item.deductible).reduce((sum, item) => sum + toNumber(item.amount), 0);
+    const depreciationTotal = assets.reduce((sum, item) => sum + toNumber(item.depreciation), 0);
     const outputVat = salesVat;
-    const inputVat = purchases.reduce((sum, item) => sum + (item.deductible ? item.amount * 0.18 : 0), 0);
+    const inputVat = purchases.reduce((sum, item) => sum + (item.deductible ? toNumber(item.amount) * 0.18 : 0), 0);
     const vatPayable = Math.max(0, outputVat - inputVat);
-    const currentProfit = Math.max(0, salesTotal - purchaseTotal - expenseTotal - depreciationTotal);
+    const currentProfit = salesTotal - purchaseTotal - expenseTotal - depreciationTotal;
     const projectedProfit = projectedAnnualProfit || currentProfit * 1.25;
     const estimatedTax = projectedProfit * (taxRate / 100);
 

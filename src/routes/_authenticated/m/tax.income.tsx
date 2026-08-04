@@ -29,13 +29,15 @@ function IncomeTaxPage() {
   const paid = incomeTax.filter((row) => row.paymentStatus === "Paid").reduce((sum, row) => sum + row.amount, 0);
   const completion = Math.min(100, Math.round((currentProfit / Math.max(1, projectedAnnualProfit)) * 100));
   const shortfall = Math.max(0, estimatedTax - paid);
+  const ratio = projectedAnnualProfit > 0 ? currentProfit / projectedAnnualProfit : 0;
 
-  const risk =
-    metrics.overdue > 0
-      ? { label: "High", tone: "from-rose-500 to-orange-400", note: "You have overdue filings in the tax calendar." }
-      : shortfall > estimatedTax * 0.5
-        ? { label: "Medium", tone: "from-amber-400 to-amber-300", note: "More than half of the estimated tax is still unpaid." }
-        : { label: "Low", tone: "from-emerald-400 to-emerald-300", note: "Provisional payments are on track." };
+  const risk = ratio >= 0.9
+    ? { label: "High", tone: "from-rose-500 to-red-400", cardTone: "danger" as const, note: "Net profit is nearing, matching or exceeding the projected annual profit." }
+    : ratio >= 0.6
+      ? { label: "Medium", tone: "from-orange-400 to-amber-500", cardTone: "warning" as const, note: "Net profit is moving into the higher-risk range." }
+      : ratio >= 0.3
+        ? { label: "Moderate", tone: "from-amber-400 to-amber-300", cardTone: "warning" as const, note: "Net profit is rising but still below the higher-risk range." }
+        : { label: "Low", tone: "from-emerald-400 to-emerald-300", cardTone: "success" as const, note: ratio <= 0 ? "Current position is a loss, so the risk indicator is green." : "Profit is still below the projected annual profit." };
 
   const submit = (value: Record<string, FieldValue>) => {
     const profitBase = num(value.profitBase);
@@ -86,10 +88,10 @@ function IncomeTaxPage() {
     >
       <SummaryStrip
         items={[
-          { label: "Projected Annual Profit", value: formatCurrency(projectedAnnualProfit), hint: `${completion}% realised`, accent: true },
+          { label: "Projected Annual Profit", value: formatCurrency(projectedAnnualProfit), hint: `${completion}% realised` },
           { label: "Current Profit", value: formatCurrency(currentProfit), hint: "Sales − purchases − expenses − depreciation" },
           { label: `Estimated Tax (${taxRate}%)`, value: formatCurrency(estimatedTax), hint: `${formatCurrency(paid)} already paid` },
-          { label: "Tax Risk", value: risk.label, hint: risk.note },
+          { label: "Tax Risk", value: risk.label, hint: risk.note, tone: risk.cardTone },
         ]}
       />
 

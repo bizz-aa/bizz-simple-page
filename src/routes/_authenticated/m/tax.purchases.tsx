@@ -48,12 +48,7 @@ function PurchasesPage() {
       }
     >
       <SummaryStrip
-        items={[
-          { label: "Total Purchases", value: formatCurrency(metrics.purchaseTotal), hint: `${purchases.length} records`, accent: true },
-          { label: "Tax Deduction", value: formatCurrency(metrics.purchaseDeduction), hint: "Deductible amount" },
-          { label: "Input VAT", value: formatCurrency(metrics.inputVat), hint: "18% on deductibles" },
-          { label: "Missing Attachments", value: String(purchases.filter((row) => !row.attachment).length), hint: "Upload evidence" },
-        ]}
+        items={[{ label: "Total Purchases", value: formatCurrency(metrics.purchaseTotal), hint: `${purchases.length} records`, accent: true }]}
       />
 
       <TaxTable
