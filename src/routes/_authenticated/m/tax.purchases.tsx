@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ShoppingBag, Plus, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useTaxModule, formatCurrency, type PurchaseRecord } from "@/components/tax-module-provider";
+import { useTaxModule, formatCurrency, periodOf, type PurchaseRecord } from "@/components/tax-module-provider";
 import { RecordDialog, ConfirmDialog, bool, num, str, type FieldValue } from "@/components/tax/record-dialog";
 import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
@@ -28,6 +28,7 @@ function PurchasesPage() {
         category: str(value.category),
         deductible: bool(value.deductible),
         attachment: bool(value.attachment),
+        taxPeriod: periodOf(str(value.date)),
         status: str(value.status) as PurchaseRecord["status"],
       },
       editing?.id,

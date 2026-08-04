@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Receipt, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useTaxModule, formatCurrency, type ExpenseRecord } from "@/components/tax-module-provider";
+import { useTaxModule, formatCurrency, periodOf, type ExpenseRecord } from "@/components/tax-module-provider";
 import { RecordDialog, ConfirmDialog, bool, num, str, type FieldValue } from "@/components/tax/record-dialog";
 import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
@@ -28,6 +28,7 @@ function ExpensesPage() {
         amount: num(value.amount),
         deductible: bool(value.deductible),
         receipt: bool(value.receipt),
+        taxPeriod: periodOf(str(value.date)),
         status: str(value.status) as ExpenseRecord["status"],
       },
       editing?.id,
