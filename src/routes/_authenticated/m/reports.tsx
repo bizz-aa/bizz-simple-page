@@ -134,32 +134,7 @@ function Reports() {
         </button>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl lg:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
-          <BottomBtn label="Home" icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
-          <BottomBtn label="Sales" icon={ShoppingCart} onClick={() => navigate({ to: "/m/sales" })} />
-          <BottomBtn label="Scan" icon={Scan} big onClick={() => navigate({ to: "/pos" })} />
-          <BottomBtn label="Reports" icon={BarChart3} active onClick={() => navigate({ to: "/m/reports" })} />
-          <BottomBtn label="More" icon={MoreHorizontal} onClick={() => navigate({ to: "/m/admin" })} />
-        </div>
-      </nav>
     </div>
   );
 }
 
-function BottomBtn({
-  label, icon: Icon, active, big, onClick,
-}: { label: string; icon: any; active?: boolean; big?: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1">
-      <span
-        className={`grid place-items-center rounded-full transition ${
-          big ? "h-14 w-14 -mt-6 shadow-lg shadow-amber-500/40" : "h-10 w-10"
-        } ${active || big ? "bg-amber-500 text-white" : "bg-white/10 text-white/70"}`}
-      >
-        <Icon className={big ? "h-6 w-6" : "h-5 w-5"} />
-      </span>
-      <span className={`text-[10px] ${active ? "text-white" : "text-white/60"}`}>{label}</span>
-    </button>
-  );
-}

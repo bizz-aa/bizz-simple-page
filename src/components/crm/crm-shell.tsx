@@ -56,35 +56,10 @@ export function CrmShell({
         <div className="mt-5 md:mt-8">{children}</div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl lg:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
-          <BottomBtn label="Home" icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
-          <BottomBtn label="Stock" icon={Package} onClick={() => navigate({ to: "/m/inventory" })} />
-          <BottomBtn label="Scan" icon={Scan} big onClick={() => navigate({ to: "/pos" })} />
-          <BottomBtn label="Tax" icon={Landmark} onClick={() => navigate({ to: "/m/tax" })} />
-          <BottomBtn label="More" icon={MoreHorizontal} onClick={() => navigate({ to: "/m/admin" })} />
-        </div>
-      </nav>
     </div>
   );
 }
 
-function BottomBtn({
-  label, icon: Icon, big, onClick,
-}: { label: string; icon: any; big?: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1">
-      <span
-        className={`grid place-items-center rounded-full transition ${
-          big ? "h-14 w-14 -mt-6 shadow-lg shadow-amber-500/40 bg-amber-500 text-white" : "h-10 w-10 bg-white/10 text-white/70"
-        }`}
-      >
-        <Icon className={big ? "h-6 w-6" : "h-5 w-5"} />
-      </span>
-      <span className="text-[10px] text-white/60">{label}</span>
-    </button>
-  );
-}
 
 export function GlassCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (

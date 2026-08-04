@@ -74,7 +74,7 @@ function Dashboard() {
   const quickActions = [
     { label: "New Sale", icon: ShoppingCart, onClick: () => toast.info("New Sale — coming soon") },
     { label: "Invoice", icon: FileText, onClick: () => toast.info("Invoice — coming soon") },
-    { label: "Customer", icon: Users, onClick: () => navigate({ to: "/m/crm/customers" }) },
+    { label: "Customers & CRM", icon: Users, onClick: () => navigate({ to: "/m/crm" }) },
     { label: "Reports", icon: BarChart3, onClick: () => navigate({ to: "/m/reports" }) },
   ] as const;
 
@@ -194,15 +194,6 @@ function Dashboard() {
       />
 
       {/* Bottom Nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-black/80 backdrop-blur-xl lg:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
-          <BottomBtn label="Home" active icon={Home} onClick={() => navigate({ to: "/dashboard" })} />
-          <BottomBtn label="Stock" icon={Package} onClick={() => navigate({ to: "/m/inventory" })} />
-          <BottomBtn label="Add" icon={Camera} big onClick={() => fileRef.current?.click()} />
-          <BottomBtn label="Tax" icon={Landmark} onClick={() => navigate({ to: "/m/tax" })} />
-          <BottomBtn label="More" icon={MoreHorizontal} onClick={() => setMoreOpen(true)} />
-        </div>
-      </nav>
 
       {/* More bottom sheet */}
       {moreOpen && (
@@ -240,19 +231,3 @@ function Dashboard() {
   );
 }
 
-function BottomBtn({
-  label, icon: Icon, active, big, onClick,
-}: { label: string; icon: any; active?: boolean; big?: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1">
-      <span
-        className={`grid place-items-center rounded-full transition ${
-          big ? "h-14 w-14 -mt-6 shadow-lg shadow-amber-500/40" : "h-10 w-10"
-        } ${active || big ? "bg-amber-500 text-white" : "bg-white/10 text-white/70"}`}
-      >
-        <Icon className={big ? "h-6 w-6" : "h-5 w-5"} />
-      </span>
-      <span className={`text-[10px] ${active ? "text-white" : "text-white/60"}`}>{label}</span>
-    </button>
-  );
-}
