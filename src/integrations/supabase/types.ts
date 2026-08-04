@@ -59,53 +59,94 @@ export type Database = {
         }
         Relationships: []
       }
-      customers: {
+      customer_channels: {
         Row: {
+          active: boolean
           created_at: string
-          email: string | null
           id: string
-          last_order_at: string | null
           name: string
           notes: string | null
-          orders_count: number
-          phone: string | null
-          segment: string | null
-          status: string
-          total_spent: number
+          type: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          active?: boolean
           created_at?: string
-          email?: string | null
           id?: string
-          last_order_at?: string | null
           name: string
           notes?: string | null
-          orders_count?: number
-          phone?: string | null
-          segment?: string | null
-          status?: string
-          total_spent?: number
+          type?: string
           updated_at?: string
           user_id?: string
         }
         Update: {
+          active?: boolean
           created_at?: string
-          email?: string | null
           id?: string
-          last_order_at?: string | null
           name?: string
           notes?: string | null
-          orders_count?: number
-          phone?: string | null
-          segment?: string | null
-          status?: string
-          total_spent?: number
+          type?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      customers: {
+        Row: {
+          address: string | null
+          channel_id: string | null
+          created_at: string
+          customer_type: string
+          email: string | null
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          channel_id?: string | null
+          created_at?: string
+          customer_type?: string
+          email?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          address?: string | null
+          channel_id?: string | null
+          created_at?: string
+          customer_type?: string
+          email?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "customer_channels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       employees: {
         Row: {
@@ -147,6 +188,45 @@ export type Database = {
           role?: string | null
           salary?: number
           status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          notes: string | null
+          payment_method: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -197,6 +277,48 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_campaigns: {
+        Row: {
+          budget: number
+          channel: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number
+          channel?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          budget?: number
+          channel?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       paye_records: {
         Row: {
           created_at: string
@@ -241,44 +363,50 @@ export type Database = {
       }
       products: {
         Row: {
+          active: boolean
+          barcode: string | null
           category: string | null
-          cost: number
+          cost_price: number
           created_at: string
           id: string
           name: string
-          price: number
           reorder_level: number
+          selling_price: number
           sku: string | null
-          status: string
-          stock: number
+          stock_quantity: number
+          tax_rate: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          active?: boolean
+          barcode?: string | null
           category?: string | null
-          cost?: number
+          cost_price?: number
           created_at?: string
           id?: string
           name: string
-          price?: number
           reorder_level?: number
+          selling_price?: number
           sku?: string | null
-          status?: string
-          stock?: number
+          stock_quantity?: number
+          tax_rate?: number
           updated_at?: string
           user_id?: string
         }
         Update: {
+          active?: boolean
+          barcode?: string | null
           category?: string | null
-          cost?: number
+          cost_price?: number
           created_at?: string
           id?: string
           name?: string
-          price?: number
           reorder_level?: number
+          selling_price?: number
           sku?: string | null
-          status?: string
-          stock?: number
+          stock_quantity?: number
+          tax_rate?: number
           updated_at?: string
           user_id?: string
         }
@@ -308,55 +436,115 @@ export type Database = {
         }
         Relationships: []
       }
-      sales_orders: {
+      sale_items: {
         Row: {
-          amount: number
-          channel: string | null
           created_at: string
-          customer_id: string | null
-          customer_name: string | null
           id: string
-          order_date: string
-          payment_method: string | null
-          reference: string
-          status: string
+          line_total: number
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sale_id: string
+          tax_amount: number
+          unit_price: number
           updated_at: string
           user_id: string
-          vat: number
         }
         Insert: {
-          amount?: number
-          channel?: string | null
           created_at?: string
-          customer_id?: string | null
-          customer_name?: string | null
           id?: string
-          order_date?: string
-          payment_method?: string | null
-          reference: string
-          status?: string
+          line_total?: number
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          sale_id: string
+          tax_amount?: number
+          unit_price?: number
           updated_at?: string
           user_id?: string
-          vat?: number
         }
         Update: {
-          amount?: number
-          channel?: string | null
           created_at?: string
-          customer_id?: string | null
-          customer_name?: string | null
           id?: string
-          order_date?: string
-          payment_method?: string | null
-          reference?: string
-          status?: string
+          line_total?: number
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          sale_id?: string
+          tax_amount?: number
+          unit_price?: number
           updated_at?: string
           user_id?: string
-          vat?: number
         }
         Relationships: [
           {
-            foreignKeyName: "sales_orders_customer_id_fkey"
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          discount_amount: number
+          id: string
+          invoice_number: string
+          payment_method: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          discount_amount?: number
+          id?: string
+          invoice_number: string
+          payment_method?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          discount_amount?: number
+          id?: string
+          invoice_number?: string
+          payment_method?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
