@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Percent, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useTaxModule, formatCurrency, type VatReturnRecord } from "@/components/tax-module-provider";
+import { useTaxModule, formatCurrency, dueDateForPeriod, type VatReturnRecord } from "@/components/tax-module-provider";
 import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
 import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
@@ -28,6 +28,7 @@ function VatPage() {
         outputVat,
         inputVat,
         payable: Math.max(0, outputVat - inputVat),
+        dueDate: str(value.dueDate) || dueDateForPeriod(str(value.period)),
         paymentStatus: str(value.paymentStatus) as VatReturnRecord["paymentStatus"],
         status: str(value.status) as VatReturnRecord["status"],
       },
@@ -101,7 +102,8 @@ function VatPage() {
         onClose={() => setFormOpen(false)}
         onSubmit={submit}
         fields={[
-          { name: "period", label: "Period", type: "text", required: true, half: true },
+          { name: "period", label: "Period (YYYY-MM)", type: "text", required: true, half: true },
+          { name: "dueDate", label: "Filing due date", type: "date", half: true },
           { name: "status", label: "Filing status", type: "select", options: ["Draft", "Pending", "Filed"], half: true },
           { name: "outputVat", label: "Output VAT", type: "number", required: true, half: true },
           { name: "inputVat", label: "Input VAT", type: "number", required: true, half: true },

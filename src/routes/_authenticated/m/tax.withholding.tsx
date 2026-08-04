@@ -3,7 +3,7 @@ import { useState } from "react";
 import { HandCoins, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useTaxModule, formatCurrency, type WithholdingRecord } from "@/components/tax-module-provider";
+import { useTaxModule, formatCurrency, dueDateForPeriod, periodOf, type WithholdingRecord } from "@/components/tax-module-provider";
 import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
 import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
@@ -30,6 +30,9 @@ function WithholdingPage() {
         type: str(value.type),
         date: str(value.date),
         amount: num(value.amount),
+        period: periodOf(str(value.date)),
+        dueDate: str(value.dueDate) || dueDateForPeriod(periodOf(str(value.date)), 7),
+        paymentStatus: str(value.paymentStatus) as WithholdingRecord["paymentStatus"],
         status: str(value.status) as WithholdingRecord["status"],
       },
       editing?.id,

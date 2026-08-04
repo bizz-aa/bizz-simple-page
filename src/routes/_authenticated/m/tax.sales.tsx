@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ShoppingCart, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useTaxModule, formatCurrency, type SaleRecord } from "@/components/tax-module-provider";
+import { useTaxModule, formatCurrency, periodOf, type SaleRecord } from "@/components/tax-module-provider";
 import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
 import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
 
@@ -27,6 +27,7 @@ function TaxSalesPage() {
         date: str(value.date),
         amount: num(value.amount),
         vat: num(value.vat),
+        taxPeriod: periodOf(str(value.date)),
         status: str(value.status) as SaleRecord["status"],
       },
       editing?.id,
