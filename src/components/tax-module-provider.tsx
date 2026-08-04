@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type SaleRecord = {
-  id: number;
+  id: string;
   reference: string;
   customer: string;
   date: string;
@@ -12,7 +13,7 @@ export type SaleRecord = {
 };
 
 export type PurchaseRecord = {
-  id: number;
+  id: string;
   supplier: string;
   date: string;
   amount: number;
@@ -24,7 +25,7 @@ export type PurchaseRecord = {
 };
 
 export type ExpenseRecord = {
-  id: number;
+  id: string;
   description: string;
   category: string;
   date: string;
@@ -36,7 +37,7 @@ export type ExpenseRecord = {
 };
 
 export type VatReturnRecord = {
-  id: number;
+  id: string;
   period: string;
   outputVat: number;
   inputVat: number;
@@ -47,7 +48,7 @@ export type VatReturnRecord = {
 };
 
 export type WithholdingRecord = {
-  id: number;
+  id: string;
   name: string;
   certificate: string;
   type: string;
@@ -60,7 +61,7 @@ export type WithholdingRecord = {
 };
 
 export type PayeRecord = {
-  id: number;
+  id: string;
   period: string;
   employees: number;
   grossPay: number;
@@ -71,7 +72,7 @@ export type PayeRecord = {
 };
 
 export type IncomeTaxRecord = {
-  id: number;
+  id: string;
   period: string;
   installment: string;
   profitBase: number;
@@ -83,7 +84,7 @@ export type IncomeTaxRecord = {
 };
 
 export type AssetRecord = {
-  id: number;
+  id: string;
   name: string;
   category: string;
   purchaseDate: string;
@@ -95,7 +96,7 @@ export type AssetRecord = {
 };
 
 export type DocumentRecord = {
-  id: number;
+  id: string;
   name: string;
   category: string;
   type: string;
@@ -105,7 +106,7 @@ export type DocumentRecord = {
 };
 
 export type ImportLog = {
-  id: number;
+  id: string;
   name: string;
   type: string;
   rows: number;
@@ -153,6 +154,7 @@ type Metrics = {
 };
 
 export type TaxModuleContextValue = {
+  loading: boolean;
   sales: SaleRecord[];
   purchases: PurchaseRecord[];
   expenses: ExpenseRecord[];
@@ -167,26 +169,26 @@ export type TaxModuleContextValue = {
   setTaxRate: (rate: number) => void;
   projectedAnnualProfit: number;
   setProjectedAnnualProfit: (value: number) => void;
-  saveSale: (record: Omit<SaleRecord, "id">, id?: number) => void;
-  deleteSale: (id: number) => void;
-  savePurchase: (record: Omit<PurchaseRecord, "id">, id?: number) => void;
-  deletePurchase: (id: number) => void;
-  saveExpense: (record: Omit<ExpenseRecord, "id">, id?: number) => void;
-  deleteExpense: (id: number) => void;
-  saveVatReturn: (record: Omit<VatReturnRecord, "id">, id?: number) => void;
-  deleteVatReturn: (id: number) => void;
-  saveWithholding: (record: Omit<WithholdingRecord, "id">, id?: number) => void;
-  deleteWithholding: (id: number) => void;
-  savePaye: (record: Omit<PayeRecord, "id">, id?: number) => void;
-  deletePaye: (id: number) => void;
-  saveIncomeTax: (record: Omit<IncomeTaxRecord, "id">, id?: number) => void;
-  deleteIncomeTax: (id: number) => void;
-  saveAsset: (record: Omit<AssetRecord, "id">, id?: number) => void;
-  deleteAsset: (id: number) => void;
-  saveDocument: (record: Omit<DocumentRecord, "id">, id?: number) => void;
-  deleteDocument: (id: number) => void;
+  saveSale: (record: Omit<SaleRecord, "id">, id?: string) => void;
+  deleteSale: (id: string) => void;
+  savePurchase: (record: Omit<PurchaseRecord, "id">, id?: string) => void;
+  deletePurchase: (id: string) => void;
+  saveExpense: (record: Omit<ExpenseRecord, "id">, id?: string) => void;
+  deleteExpense: (id: string) => void;
+  saveVatReturn: (record: Omit<VatReturnRecord, "id">, id?: string) => void;
+  deleteVatReturn: (id: string) => void;
+  saveWithholding: (record: Omit<WithholdingRecord, "id">, id?: string) => void;
+  deleteWithholding: (id: string) => void;
+  savePaye: (record: Omit<PayeRecord, "id">, id?: string) => void;
+  deletePaye: (id: string) => void;
+  saveIncomeTax: (record: Omit<IncomeTaxRecord, "id">, id?: string) => void;
+  deleteIncomeTax: (id: string) => void;
+  saveAsset: (record: Omit<AssetRecord, "id">, id?: string) => void;
+  deleteAsset: (id: string) => void;
+  saveDocument: (record: Omit<DocumentRecord, "id">, id?: string) => void;
+  deleteDocument: (id: string) => void;
   addImport: (record: Omit<ImportLog, "id">) => void;
-  deleteImport: (id: number) => void;
+  deleteImport: (id: string) => void;
   obligations: TaxObligation[];
   toggleReminder: (id: string, on: boolean) => void;
   markObligationPaid: (obligation: TaxObligation) => void;
@@ -232,132 +234,202 @@ function reminderStage(daysLeft: number, paid: boolean): 7 | 3 | 1 | null {
   return null;
 }
 
-/* -------------------------------- seed data ------------------------------- */
+/* ------------------------------- row mappers ------------------------------ */
 
-const initialSales: SaleRecord[] = [
-  { id: 1, reference: "INV-001", customer: "Nile Traders", date: "2026-07-02", amount: 12000000, vat: 2160000, taxPeriod: "2026-07", status: "Reviewed" },
-  { id: 2, reference: "INV-002", customer: "Apex Supplies", date: "2026-07-08", amount: 8600000, vat: 1548000, taxPeriod: "2026-07", status: "Recorded" },
-  { id: 3, reference: "INV-003", customer: "Zanzi Foods", date: "2026-07-19", amount: 5400000, vat: 972000, taxPeriod: "2026-07", status: "Pending" },
-];
+const num = (v: unknown) => Number(v ?? 0);
+const str = (v: unknown) => (v == null ? "" : String(v));
 
-const initialPurchases: PurchaseRecord[] = [
-  { id: 1, supplier: "Northline Ltd", date: "2026-07-05", amount: 4200000, deductible: true, category: "Inventory", attachment: true, taxPeriod: "2026-07", status: "Verified" },
-  { id: 2, supplier: "Metro Office", date: "2026-07-10", amount: 1800000, deductible: false, category: "Entertainment", attachment: false, taxPeriod: "2026-07", status: "Pending" },
-];
+const mapSale = (r: any): SaleRecord => ({
+  id: r.id, reference: str(r.reference), customer: str(r.customer), date: str(r.date),
+  amount: num(r.amount), vat: num(r.vat), taxPeriod: str(r.tax_period), status: r.status,
+});
+const saleRow = (r: Omit<SaleRecord, "id">) => ({
+  reference: r.reference, customer: r.customer, date: r.date, amount: r.amount,
+  vat: r.vat, tax_period: r.taxPeriod, status: r.status,
+});
 
-const initialExpenses: ExpenseRecord[] = [
-  { id: 1, description: "Fuel & transport", category: "Operations", date: "2026-07-06", amount: 720000, deductible: true, receipt: true, taxPeriod: "2026-07", status: "Approved" },
-  { id: 2, description: "Client lunch", category: "Entertainment", date: "2026-07-12", amount: 280000, deductible: false, receipt: true, taxPeriod: "2026-07", status: "Pending" },
-];
+const mapPurchase = (r: any): PurchaseRecord => ({
+  id: r.id, supplier: str(r.supplier), date: str(r.date), amount: num(r.amount),
+  deductible: !!r.deductible, category: str(r.category), attachment: !!r.attachment,
+  taxPeriod: str(r.tax_period), status: r.status,
+});
+const purchaseRow = (r: Omit<PurchaseRecord, "id">) => ({
+  supplier: r.supplier, date: r.date, amount: r.amount, deductible: r.deductible,
+  category: r.category, attachment: r.attachment, tax_period: r.taxPeriod, status: r.status,
+});
 
-const initialVatReturns: VatReturnRecord[] = [
-  { id: 1, period: "2026-06", outputVat: 3708000, inputVat: 2400000, payable: 1308000, dueDate: "2026-07-20", paymentStatus: "Paid", status: "Filed" },
-  { id: 2, period: "2026-07", outputVat: 3708000, inputVat: 2900000, payable: 808000, dueDate: "2026-08-20", paymentStatus: "Unpaid", status: "Draft" },
-];
+const mapExpense = (r: any): ExpenseRecord => ({
+  id: r.id, description: str(r.description), category: str(r.category), date: str(r.date),
+  amount: num(r.amount), deductible: !!r.deductible, receipt: !!r.receipt,
+  taxPeriod: str(r.tax_period), status: r.status,
+});
+const expenseRow = (r: Omit<ExpenseRecord, "id">) => ({
+  description: r.description, category: r.category, date: r.date, amount: r.amount,
+  deductible: r.deductible, receipt: r.receipt, tax_period: r.taxPeriod, status: r.status,
+});
 
-const initialWithholding: WithholdingRecord[] = [
-  { id: 1, name: "BluePeak Studio", certificate: "WHT-2026-011", type: "Service", date: "2026-07-04", period: "2026-07", dueDate: "2026-08-07", amount: 820000, paymentStatus: "Paid", status: "Issued" },
-  { id: 2, name: "Harbor Logistics", certificate: "WHT-2026-012", type: "Supply", date: "2026-07-15", period: "2026-07", dueDate: "2026-08-07", amount: 410000, paymentStatus: "Unpaid", status: "Received" },
-];
+const mapVat = (r: any): VatReturnRecord => ({
+  id: r.id, period: str(r.period), outputVat: num(r.output_vat), inputVat: num(r.input_vat),
+  payable: num(r.payable), dueDate: str(r.due_date), paymentStatus: r.payment_status, status: r.status,
+});
+const vatRow = (r: Omit<VatReturnRecord, "id">) => ({
+  period: r.period, output_vat: r.outputVat, input_vat: r.inputVat, payable: r.payable,
+  due_date: r.dueDate, payment_status: r.paymentStatus, status: r.status,
+});
 
-const initialPaye: PayeRecord[] = [
-  { id: 1, period: "2026-06", employees: 12, grossPay: 14400000, payeAmount: 1980000, dueDate: "2026-07-07", paymentStatus: "Paid", status: "Filed" },
-  { id: 2, period: "2026-07", employees: 13, grossPay: 15200000, payeAmount: 2130000, dueDate: "2026-08-07", paymentStatus: "Unpaid", status: "Draft" },
-];
+const mapWht = (r: any): WithholdingRecord => ({
+  id: r.id, name: str(r.name), certificate: str(r.certificate), type: str(r.type),
+  date: str(r.date), period: str(r.period), dueDate: str(r.due_date), amount: num(r.amount),
+  paymentStatus: r.payment_status, status: r.status,
+});
+const whtRow = (r: Omit<WithholdingRecord, "id">) => ({
+  name: r.name, certificate: r.certificate, type: r.type, date: r.date, period: r.period,
+  due_date: r.dueDate, amount: r.amount, payment_status: r.paymentStatus, status: r.status,
+});
 
-const initialIncomeTax: IncomeTaxRecord[] = [
-  { id: 1, period: "2026", installment: "Q1 provisional", profitBase: 42000000, taxRate: 30, amount: 3150000, dueDate: "2026-03-31", paymentStatus: "Paid", status: "Filed" },
-  { id: 2, period: "2026", installment: "Q2 provisional", profitBase: 42000000, taxRate: 30, amount: 3150000, dueDate: "2026-06-30", paymentStatus: "Paid", status: "Filed" },
-  { id: 3, period: "2026", installment: "Q3 provisional", profitBase: 42000000, taxRate: 30, amount: 3150000, dueDate: "2026-09-30", paymentStatus: "Unpaid", status: "Draft" },
-  { id: 4, period: "2026", installment: "Q4 provisional", profitBase: 42000000, taxRate: 30, amount: 3150000, dueDate: "2026-12-31", paymentStatus: "Unpaid", status: "Draft" },
-];
+const mapPaye = (r: any): PayeRecord => ({
+  id: r.id, period: str(r.period), employees: num(r.employees), grossPay: num(r.gross_pay),
+  payeAmount: num(r.paye_amount), dueDate: str(r.due_date), paymentStatus: r.payment_status, status: r.status,
+});
+const payeRow = (r: Omit<PayeRecord, "id">) => ({
+  period: r.period, employees: r.employees, gross_pay: r.grossPay, paye_amount: r.payeAmount,
+  due_date: r.dueDate, payment_status: r.paymentStatus, status: r.status,
+});
 
-const initialAssets: AssetRecord[] = [
-  { id: 1, name: "Delivery Van", category: "Vehicle", purchaseDate: "2024-03-11", purchaseValue: 18000000, currentValue: 12600000, depreciation: 5400000, usefulLife: 5, status: "Active" },
-  { id: 2, name: "Laptop", category: "Office", purchaseDate: "2025-01-20", purchaseValue: 3600000, currentValue: 1200000, depreciation: 2400000, usefulLife: 3, status: "Active" },
-];
+const mapIncome = (r: any): IncomeTaxRecord => ({
+  id: r.id, period: str(r.period), installment: str(r.installment), profitBase: num(r.profit_base),
+  taxRate: num(r.tax_rate), amount: num(r.amount), dueDate: str(r.due_date),
+  paymentStatus: r.payment_status, status: r.status,
+});
+const incomeRow = (r: Omit<IncomeTaxRecord, "id">) => ({
+  period: r.period, installment: r.installment, profit_base: r.profitBase, tax_rate: r.taxRate,
+  amount: r.amount, due_date: r.dueDate, payment_status: r.paymentStatus, status: r.status,
+});
 
-const initialDocuments: DocumentRecord[] = [
-  { id: 1, name: "VAT Return June.pdf", category: "VAT", type: "PDF", size: "1.2 MB", status: "Verified", uploadedAt: "2026-07-18" },
-  { id: 2, name: "Invoice-001.pdf", category: "Invoice", type: "PDF", size: "0.8 MB", status: "Pending", uploadedAt: "2026-07-20" },
-];
+const mapAsset = (r: any): AssetRecord => ({
+  id: r.id, name: str(r.name), category: str(r.category), purchaseDate: str(r.purchase_date),
+  purchaseValue: num(r.purchase_value), currentValue: num(r.current_value),
+  depreciation: num(r.depreciation), usefulLife: num(r.useful_life), status: r.status,
+});
+const assetRow = (r: Omit<AssetRecord, "id">) => ({
+  name: r.name, category: r.category, purchase_date: r.purchaseDate, purchase_value: r.purchaseValue,
+  current_value: r.currentValue, depreciation: r.depreciation, useful_life: r.usefulLife, status: r.status,
+});
 
-const initialImports: ImportLog[] = [
-  { id: 1, name: "June Sales.csv", type: "CSV", rows: 142, duplicates: 2, errors: 0, status: "Completed", importedAt: "2026-07-01" },
-  { id: 2, name: "Expenses.xlsx", type: "Excel", rows: 54, duplicates: 1, errors: 3, status: "Review", importedAt: "2026-07-16" },
-];
+const mapDocument = (r: any): DocumentRecord => ({
+  id: r.id, name: str(r.name), category: str(r.category), type: str(r.type),
+  size: str(r.size), status: r.status, uploadedAt: str(r.uploaded_at),
+});
+const documentRow = (r: Omit<DocumentRecord, "id">) => ({
+  name: r.name, category: r.category, type: r.type, size: r.size, status: r.status, uploaded_at: r.uploadedAt,
+});
 
-const STORAGE_KEY = "bizz.tax.module.v2";
+const mapImport = (r: any): ImportLog => ({
+  id: r.id, name: str(r.name), type: str(r.type), rows: num(r.rows_count),
+  duplicates: num(r.duplicates), errors: num(r.errors), status: r.status, importedAt: str(r.imported_at),
+});
+const importRow = (r: Omit<ImportLog, "id">) => ({
+  name: r.name, type: r.type, rows_count: r.rows, duplicates: r.duplicates,
+  errors: r.errors, status: r.status, imported_at: r.importedAt,
+});
 
-type Snapshot = {
-  sales: SaleRecord[];
-  purchases: PurchaseRecord[];
-  expenses: ExpenseRecord[];
-  vatReturns: VatReturnRecord[];
-  withholding: WithholdingRecord[];
-  paye: PayeRecord[];
-  incomeTax: IncomeTaxRecord[];
-  assets: AssetRecord[];
-  documents: DocumentRecord[];
-  imports: ImportLog[];
-  reminders: Record<string, boolean>;
-  taxRate: number;
-  projectedAnnualProfit: number;
-};
+/* -------------------------------- provider -------------------------------- */
 
 export function TaxModuleProvider({ children }: { children: ReactNode }) {
-  const [sales, setSales] = useState(initialSales);
-  const [purchases, setPurchases] = useState(initialPurchases);
-  const [expenses, setExpenses] = useState(initialExpenses);
-  const [vatReturns, setVatReturns] = useState(initialVatReturns);
-  const [withholding, setWithholding] = useState(initialWithholding);
-  const [paye, setPaye] = useState(initialPaye);
-  const [incomeTax, setIncomeTax] = useState(initialIncomeTax);
-  const [assets, setAssets] = useState(initialAssets);
-  const [documents, setDocuments] = useState(initialDocuments);
-  const [imports, setImports] = useState(initialImports);
-  const [reminders, setReminders] = useState<Record<string, boolean>>({});
-  const [taxRate, setTaxRate] = useState(30);
-  const [projectedAnnualProfit, setProjectedAnnualProfit] = useState(42000000);
-  const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [vatReturns, setVatReturns] = useState<VatReturnRecord[]>([]);
+  const [withholding, setWithholding] = useState<WithholdingRecord[]>([]);
+  const [paye, setPaye] = useState<PayeRecord[]>([]);
+  const [incomeTax, setIncomeTax] = useState<IncomeTaxRecord[]>([]);
+  const [assets, setAssets] = useState<AssetRecord[]>([]);
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [imports, setImports] = useState<ImportLog[]>([]);
+  const [remindersOff, setRemindersOff] = useState<string[]>([]);
+  const [taxRate, setTaxRateState] = useState(30);
+  const [projectedAnnualProfit, setProjectedProfitState] = useState(0);
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as Partial<Snapshot>;
-        if (saved.sales) setSales(saved.sales);
-        if (saved.purchases) setPurchases(saved.purchases);
-        if (saved.expenses) setExpenses(saved.expenses);
-        if (saved.vatReturns) setVatReturns(saved.vatReturns);
-        if (saved.withholding) setWithholding(saved.withholding);
-        if (saved.paye) setPaye(saved.paye);
-        if (saved.incomeTax) setIncomeTax(saved.incomeTax);
-        if (saved.assets) setAssets(saved.assets);
-        if (saved.documents) setDocuments(saved.documents);
-        if (saved.imports) setImports(saved.imports);
-        if (saved.reminders) setReminders(saved.reminders);
-        if (typeof saved.taxRate === "number") setTaxRate(saved.taxRate);
-        if (typeof saved.projectedAnnualProfit === "number") setProjectedAnnualProfit(saved.projectedAnnualProfit);
-      }
-    } catch {
-      /* ignore corrupt cache */
+  const refresh = useCallback(async () => {
+    const [s, p, e, v, w, py, it, a, d, im, st] = await Promise.all([
+      supabase.from("tax_sales").select("*").order("date", { ascending: false }),
+      supabase.from("tax_purchases").select("*").order("date", { ascending: false }),
+      supabase.from("tax_expenses").select("*").order("date", { ascending: false }),
+      supabase.from("vat_returns").select("*").order("period", { ascending: false }),
+      supabase.from("withholding_records").select("*").order("date", { ascending: false }),
+      supabase.from("paye_records").select("*").order("period", { ascending: false }),
+      supabase.from("income_tax_records").select("*").order("due_date"),
+      supabase.from("capital_assets").select("*").order("purchase_date", { ascending: false }),
+      supabase.from("tax_documents").select("*").order("uploaded_at", { ascending: false }),
+      supabase.from("tax_imports").select("*").order("imported_at", { ascending: false }),
+      supabase.from("tax_settings").select("*").maybeSingle(),
+    ]);
+    setSales((s.data ?? []).map(mapSale));
+    setPurchases((p.data ?? []).map(mapPurchase));
+    setExpenses((e.data ?? []).map(mapExpense));
+    setVatReturns((v.data ?? []).map(mapVat));
+    setWithholding((w.data ?? []).map(mapWht));
+    setPaye((py.data ?? []).map(mapPaye));
+    setIncomeTax((it.data ?? []).map(mapIncome));
+    setAssets((a.data ?? []).map(mapAsset));
+    setDocuments((d.data ?? []).map(mapDocument));
+    setImports((im.data ?? []).map(mapImport));
+    if (st.data) {
+      setTaxRateState(Number(st.data.tax_rate ?? 30));
+      setProjectedProfitState(Number(st.data.projected_annual_profit ?? 0));
+      setRemindersOff(st.data.reminders_off ?? []);
     }
-    setHydrated(true);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    const snapshot: Snapshot = {
-      sales, purchases, expenses, vatReturns, withholding, paye, incomeTax,
-      assets, documents, imports, reminders, taxRate, projectedAnnualProfit,
-    };
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-    } catch {
-      /* storage full — ignore */
-    }
-  }, [hydrated, sales, purchases, expenses, vatReturns, withholding, paye, incomeTax, assets, documents, imports, reminders, taxRate, projectedAnnualProfit]);
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      if (!data.user) { setLoading(false); return; }
+      void refresh();
+    });
+    return () => { active = false; };
+  }, [refresh]);
+
+  const saveSetting = useCallback(async (patch: Record<string, unknown>) => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return;
+    await supabase.from("tax_settings").upsert({ user_id: data.user.id, ...patch } as any);
+  }, []);
+
+  const setTaxRate = useCallback((rate: number) => {
+    setTaxRateState(rate);
+    void saveSetting({ tax_rate: rate });
+  }, [saveSetting]);
+
+  const setProjectedAnnualProfit = useCallback((value: number) => {
+    setProjectedProfitState(value);
+    void saveSetting({ projected_annual_profit: value });
+  }, [saveSetting]);
+
+  const makeSave = useCallback(
+    <T,>(table: string, toRow: (record: T) => Record<string, unknown>) =>
+      (record: T, id?: string) => {
+        void (async () => {
+          if (id) await supabase.from(table as any).update(toRow(record) as any).eq("id", id);
+          else await supabase.from(table as any).insert(toRow(record) as any);
+          await refresh();
+        })();
+      },
+    [refresh],
+  );
+
+  const makeDelete = useCallback(
+    (table: string) => (id: string) => {
+      void (async () => {
+        await supabase.from(table as any).delete().eq("id", id);
+        await refresh();
+      })();
+    },
+    [refresh],
+  );
 
   const obligations = useMemo<TaxObligation[]>(() => {
     const build = (
@@ -379,7 +451,7 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
         filingStatus,
         daysLeft,
         reminderStage: reminderStage(daysLeft, paid),
-        reminderOn: reminders[id] ?? true,
+        reminderOn: !remindersOff.includes(id),
         sourceRoute, sourceLabel,
       };
     };
@@ -400,7 +472,7 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
     ];
 
     return items.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-  }, [vatReturns, paye, withholding, incomeTax, reminders]);
+  }, [vatReturns, paye, withholding, incomeTax, remindersOff]);
 
   const metrics = useMemo<Metrics>(() => {
     const salesTotal = sales.reduce((sum, item) => sum + item.amount, 0);
@@ -434,62 +506,56 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
     };
   }, [sales, purchases, expenses, assets, documents, vatReturns, obligations, taxRate, projectedAnnualProfit]);
 
-  const upsert = useCallback(
-    <T extends { id: number }>(setter: React.Dispatch<React.SetStateAction<T[]>>) =>
-      (record: Omit<T, "id">, id?: number) => {
-        setter((current) =>
-          id
-            ? current.map((item) => (item.id === id ? ({ ...item, ...record } as T) : item))
-            : [{ id: Date.now(), ...record } as T, ...current],
-        );
-      },
-    [],
-  );
-
-  const remove = useCallback(
-    <T extends { id: number }>(setter: React.Dispatch<React.SetStateAction<T[]>>) =>
-      (id: number) => setter((current) => current.filter((item) => item.id !== id)),
-    [],
-  );
-
   const markObligationPaid = useCallback((obligation: TaxObligation) => {
-    const rawId = Number(obligation.id.split("-")[1]);
-    if (obligation.taxType === "VAT") {
-      setVatReturns((current) => current.map((row) => (row.id === rawId ? { ...row, paymentStatus: "Paid", status: "Filed" } : row)));
-    } else if (obligation.taxType === "PAYE") {
-      setPaye((current) => current.map((row) => (row.id === rawId ? { ...row, paymentStatus: "Paid", status: "Filed" } : row)));
-    } else if (obligation.taxType === "Withholding Tax") {
-      setWithholding((current) => current.map((row) => (row.id === rawId ? { ...row, paymentStatus: "Paid" } : row)));
-    } else {
-      setIncomeTax((current) => current.map((row) => (row.id === rawId ? { ...row, paymentStatus: "Paid", status: "Filed" } : row)));
-    }
-  }, []);
+    const rawId = obligation.id.slice(obligation.id.indexOf("-") + 1);
+    void (async () => {
+      if (obligation.taxType === "VAT") {
+        await supabase.from("vat_returns").update({ payment_status: "Paid", status: "Filed" }).eq("id", rawId);
+      } else if (obligation.taxType === "PAYE") {
+        await supabase.from("paye_records").update({ payment_status: "Paid", status: "Filed" }).eq("id", rawId);
+      } else if (obligation.taxType === "Withholding Tax") {
+        await supabase.from("withholding_records").update({ payment_status: "Paid" }).eq("id", rawId);
+      } else {
+        await supabase.from("income_tax_records").update({ payment_status: "Paid", status: "Filed" }).eq("id", rawId);
+      }
+      await refresh();
+    })();
+  }, [refresh]);
+
+  const toggleReminder = useCallback((id: string, on: boolean) => {
+    setRemindersOff((current) => {
+      const next = on ? current.filter((item) => item !== id) : Array.from(new Set([...current, id]));
+      void saveSetting({ reminders_off: next });
+      return next;
+    });
+  }, [saveSetting]);
 
   const value: TaxModuleContextValue = {
+    loading,
     sales, purchases, expenses, vatReturns, withholding, paye, incomeTax, assets, documents, imports,
     taxRate, setTaxRate, projectedAnnualProfit, setProjectedAnnualProfit,
-    saveSale: upsert(setSales),
-    deleteSale: remove(setSales),
-    savePurchase: upsert(setPurchases),
-    deletePurchase: remove(setPurchases),
-    saveExpense: upsert(setExpenses),
-    deleteExpense: remove(setExpenses),
-    saveVatReturn: upsert(setVatReturns),
-    deleteVatReturn: remove(setVatReturns),
-    saveWithholding: upsert(setWithholding),
-    deleteWithholding: remove(setWithholding),
-    savePaye: upsert(setPaye),
-    deletePaye: remove(setPaye),
-    saveIncomeTax: upsert(setIncomeTax),
-    deleteIncomeTax: remove(setIncomeTax),
-    saveAsset: upsert(setAssets),
-    deleteAsset: remove(setAssets),
-    saveDocument: upsert(setDocuments),
-    deleteDocument: remove(setDocuments),
-    addImport: (record) => setImports((current) => [{ id: Date.now(), ...record }, ...current]),
-    deleteImport: remove(setImports),
+    saveSale: makeSave("tax_sales", saleRow),
+    deleteSale: makeDelete("tax_sales"),
+    savePurchase: makeSave("tax_purchases", purchaseRow),
+    deletePurchase: makeDelete("tax_purchases"),
+    saveExpense: makeSave("tax_expenses", expenseRow),
+    deleteExpense: makeDelete("tax_expenses"),
+    saveVatReturn: makeSave("vat_returns", vatRow),
+    deleteVatReturn: makeDelete("vat_returns"),
+    saveWithholding: makeSave("withholding_records", whtRow),
+    deleteWithholding: makeDelete("withholding_records"),
+    savePaye: makeSave("paye_records", payeRow),
+    deletePaye: makeDelete("paye_records"),
+    saveIncomeTax: makeSave("income_tax_records", incomeRow),
+    deleteIncomeTax: makeDelete("income_tax_records"),
+    saveAsset: makeSave("capital_assets", assetRow),
+    deleteAsset: makeDelete("capital_assets"),
+    saveDocument: makeSave("tax_documents", documentRow),
+    deleteDocument: makeDelete("tax_documents"),
+    addImport: (record) => makeSave("tax_imports", importRow)(record),
+    deleteImport: makeDelete("tax_imports"),
     obligations,
-    toggleReminder: (id, on) => setReminders((current) => ({ ...current, [id]: on })),
+    toggleReminder,
     markObligationPaid,
     metrics,
   };
