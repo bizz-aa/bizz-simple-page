@@ -83,14 +83,21 @@ function TaxSalesPage() {
           { key: "date", label: "Date", hideOnMobile: true },
           { key: "amount", label: "Amount", render: (row) => formatCurrency(row.amount) },
           { key: "vat", label: "Tax Amount", render: (row) => formatCurrency(row.vat), hideOnMobile: true },
+          {
+            key: "receipt",
+            label: "Receipt",
+            render: (row) =>
+              receiptFor(row.id) ? <span className="text-emerald-300">Attached</span> : <span className="text-rose-300">Missing</span>,
+            hideOnMobile: true,
+          },
           { key: "status", label: "Status", render: (row) => <StatusBadge value={row.status} /> },
         ]}
         onRowClick={setDetail}
         onExport={(rows) =>
           exportCsv(
             "tax-sales.csv",
-            ["Reference", "Customer", "Date", "Amount", "Tax Amount", "Status"],
-            rows.map((row) => [row.reference, row.customer, row.date, row.amount, row.vat, row.status]),
+            ["Reference", "Customer", "Date", "Amount", "Tax Amount", "Receipt", "Status"],
+            rows.map((row) => [row.reference, row.customer, row.date, row.amount, row.vat, receiptFor(row.id) ? "Attached" : "Missing", row.status]),
           )
         }
         addLabel="New sale"
@@ -101,11 +108,29 @@ function TaxSalesPage() {
       <RecordDialog
         open={formOpen}
         title={editing ? "Edit sales record" : "New sales record"}
-        description="Capture the sale and its tax amount."
+        description="Capture the sale, its tax amount and a photo of the EFD receipt."
         submitLabel={editing ? "Update" : "Create"}
         initialValue={editing ? { ...editing } : null}
-        onClose={() => setFormOpen(false)}
+        onClose={() => { setFormOpen(false); setReceipt(null); }}
         onSubmit={submit}
+        blockSubmit={needsReceipt ? "A photo of the EFD receipt is required." : null}
+        extra={
+          <div className="rounded-2xl border border-white/15 bg-black/25 p-4">
+            <Label className="text-xs uppercase tracking-[0.14em] text-white/55">EFD receipt photo</Label>
+            <p className="mt-1 text-xs text-white/55">Scan or photograph the receipt — it is archived in the Document Center.</p>
+            <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-xl border border-amber-300/30 bg-amber-400/15 px-3 py-2 text-sm text-amber-200">
+              <Camera className="h-4 w-4" />
+              {receipt ? receipt.name : "Take photo / choose image"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(event) => setReceipt(event.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
+        }
         fields={[
           { name: "reference", label: "Reference", type: "text", required: true, half: true },
           { name: "customer", label: "Customer", type: "text", required: true, half: true },
@@ -129,6 +154,7 @@ function TaxSalesPage() {
                 { label: "Amount", value: formatCurrency(detail.amount) },
                 { label: "Tax amount", value: formatCurrency(detail.vat) },
                 { label: "Net of tax", value: formatCurrency(detail.amount - detail.vat) },
+                { label: "Receipt", value: receiptFor(detail.id) ? "Attached" : "Missing" },
                 { label: "Status", value: <StatusBadge value={detail.status} /> },
               ]
             : []
@@ -136,6 +162,18 @@ function TaxSalesPage() {
         footer={
           detail ? (
             <>
+              {receiptFor(detail.id) ? (
+                <Button
+                  variant="outline"
+                  className="border-white/15 bg-white/5 text-white hover:bg-white/15"
+                  onClick={() => {
+                    const doc = receiptFor(detail.id);
+                    if (doc) void documentUrl(doc).then((url) => url && window.open(url, "_blank", "noopener"));
+                  }}
+                >
+                  View receipt
+                </Button>
+              ) : null}
               <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Edit</Button>
               <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
             </>
@@ -148,7 +186,13 @@ function TaxSalesPage() {
         title="Delete sales record"
         description={`${pendingDelete?.reference ?? ""} will be removed from your tax register.`}
         onClose={() => setPendingDelete(null)}
-        onConfirm={() => { if (pendingDelete) { deleteSale(pendingDelete.id); toast.success("Sales record deleted"); } }}
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          const doc = receiptFor(pendingDelete.id);
+          if (doc) deleteDocument(doc.id);
+          deleteSale(pendingDelete.id);
+          toast.success("Sales record deleted");
+        }}
       />
     </TaxWorkspace>
   );
