@@ -556,8 +556,12 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          file_path: string | null
+          file_size: number | null
+          file_url: string | null
           id: string
           name: string
+          sale_id: string | null
           size: string | null
           status: string
           type: string | null
@@ -568,8 +572,12 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string
+          file_path?: string | null
+          file_size?: number | null
+          file_url?: string | null
           id?: string
           name: string
+          sale_id?: string | null
           size?: string | null
           status?: string
           type?: string | null
@@ -580,8 +588,12 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string
+          file_path?: string | null
+          file_size?: number | null
+          file_url?: string | null
           id?: string
           name?: string
+          sale_id?: string | null
           size?: string | null
           status?: string
           type?: string | null
@@ -589,7 +601,15 @@ export type Database = {
           uploaded_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tax_documents_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "tax_sales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tax_expenses: {
         Row: {
