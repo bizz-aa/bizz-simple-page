@@ -216,31 +216,38 @@ function TaxCalendarPage() {
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
             {monthGrid.map((cell, index) => (
-              <div
+              <button
                 key={cell.date ?? `pad-${index}`}
-                className={`min-h-[64px] rounded-xl border p-1.5 text-left md:min-h-[92px] ${
+                type="button"
+                disabled={!cell.date || cell.items.length === 0}
+                onClick={() => { if (cell.items[0]) setDetail(cell.items[0]); }}
+                className={`flex min-h-[52px] flex-col items-center justify-start rounded-xl border p-1.5 md:min-h-[76px] ${
                   cell.date === todayIso ? "border-amber-300/40 bg-amber-400/10" : "border-white/10 bg-white/[0.03]"
-                } ${cell.date ? "" : "opacity-0"}`}
+                } ${cell.date ? "" : "invisible"} ${cell.items.length > 0 ? "hover:bg-white/10" : ""}`}
               >
-                <div className="text-[11px] text-white/50">{cell.date ? Number(cell.date.slice(8)) : ""}</div>
-                <div className="mt-1 space-y-1">
+                <span className="text-[11px] text-white/60">{cell.date ? Number(cell.date.slice(8)) : ""}</span>
+                <span className="mt-1.5 flex flex-wrap items-center justify-center gap-1">
                   {cell.items.map((row) => (
-                    <button
+                    <span
                       key={row.id}
-                      type="button"
-                      onClick={() => setDetail(row)}
-                      className={`block w-full truncate rounded-md px-1.5 py-0.5 text-left text-[10px] font-medium ${
-                        row.status === "Overdue" ? "bg-rose-500/25 text-rose-100"
-                          : row.status === "Paid" ? "bg-emerald-500/20 text-emerald-100"
-                          : row.status === "Pending" ? "bg-amber-400/25 text-amber-100"
-                          : "bg-white/10 text-white/80"
+                      title={`${row.taxType} · ${row.status}`}
+                      className={`block h-1.5 w-1.5 rounded-full md:h-2 md:w-2 ${
+                        row.status === "Overdue" ? "bg-rose-400"
+                          : row.status === "Paid" ? "bg-emerald-400"
+                          : row.status === "Pending" ? "bg-amber-400"
+                          : "bg-sky-400"
                       }`}
-                    >
-                      {row.taxType}
-                    </button>
+                    />
                   ))}
-                </div>
-              </div>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] text-white/50">
+            {[["bg-rose-400", "Overdue"], ["bg-amber-400", "Pending"], ["bg-sky-400", "Upcoming"], ["bg-emerald-400", "Paid"]].map(([dot, label]) => (
+              <span key={label} className="flex items-center gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full ${dot}`} /> {label}
+              </span>
             ))}
           </div>
         </section>
