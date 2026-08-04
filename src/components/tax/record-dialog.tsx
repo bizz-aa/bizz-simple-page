@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ export type Field = {
 };
 
 export function RecordDialog({
-  open, title, description, fields, initialValue, submitLabel = "Save", onSubmit, onClose,
+  open, title, description, fields, initialValue, submitLabel = "Save", onSubmit, onClose, extra, blockSubmit,
 }: {
   open: boolean;
   title: string;
@@ -29,6 +29,8 @@ export function RecordDialog({
   submitLabel?: string;
   onSubmit: (value: Record<string, FieldValue>) => void;
   onClose: () => void;
+  extra?: ReactNode;
+  blockSubmit?: string | null;
 }) {
   const build = () => {
     const next: Record<string, FieldValue> = {};
@@ -65,7 +67,7 @@ export function RecordDialog({
 
   const handleSubmit = () => {
     setTouched(true);
-    if (missing.length > 0) return;
+    if (missing.length > 0 || blockSubmit) return;
     onSubmit(values);
     onClose();
   };
@@ -111,6 +113,9 @@ export function RecordDialog({
             );
           })}
         </div>
+
+        {extra ? <div className="mt-4">{extra}</div> : null}
+        {touched && blockSubmit ? <p className="mt-2 text-xs text-rose-300">{blockSubmit}</p> : null}
 
         <DialogFooter className="mt-6">
           <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={onClose}>Cancel</Button>

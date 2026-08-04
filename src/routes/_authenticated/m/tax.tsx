@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   Landmark, ShoppingCart, ShoppingBag, Receipt, Percent, Coins, HandCoins,
-  Building2, FolderArchive, Upload, BarChart3, ChevronRight, CalendarDays, AlertTriangle,
+  Building2, FolderArchive, BarChart3, ChevronRight, CalendarDays, AlertTriangle,
 } from "lucide-react";
 import { TaxModuleProvider, useTaxModule } from "@/components/tax-module-provider";
 import { TaxBottomNav } from "@/components/tax/tax-workspace";
@@ -18,8 +18,7 @@ const WORKSPACES = [
   { label: "Withholding Tax", icon: HandCoins, to: "/m/tax/withholding", hint: "Certificates" },
   { label: "Capital Assets", icon: Building2, to: "/m/tax/assets", hint: "Depreciation" },
   { label: "Document Center", icon: FolderArchive, to: "/m/tax/documents", hint: "Tax archive" },
-  { label: "Import Center", icon: Upload, to: "/m/tax/import", hint: "Excel & CSV" },
-  { label: "Tax Reports", icon: BarChart3, to: "/m/tax/reports", hint: "Export & print" },
+  { label: "Tax Reports", icon: BarChart3, to: "/m/tax/reports", hint: "Full report PDF" },
 ];
 
 function TaxHub() {
@@ -53,8 +52,6 @@ function TaxOverview() {
     { label: "Withholding Tax", icon: HandCoins, to: "/m/tax/withholding" },
     { label: "Capital Assets", icon: Building2, to: "/m/tax/assets" },
     { label: "Documents", icon: FolderArchive, to: "/m/tax/documents" },
-    { label: "Import Center", icon: Upload, to: "/m/tax/import" },
-    { label: "Tax Reports", icon: BarChart3, to: "/m/tax/reports" },
   ];
 
   return (

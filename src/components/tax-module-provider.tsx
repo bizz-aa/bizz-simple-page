@@ -103,7 +103,18 @@ export type DocumentRecord = {
   size: string;
   status: "Verified" | "Pending";
   uploadedAt: string;
+  filePath: string;
+  saleId: string;
 };
+
+export const DOCUMENT_CATEGORIES = [
+  "EFD Receipts",
+  "Receipts",
+  "Invoices",
+  "Certificates",
+  "Returns",
+  "Other",
+] as const;
 
 export type ImportLog = {
   id: string;
@@ -170,6 +181,7 @@ export type TaxModuleContextValue = {
   projectedAnnualProfit: number;
   setProjectedAnnualProfit: (value: number) => void;
   saveSale: (record: Omit<SaleRecord, "id">, id?: string) => void;
+  saveSaleWithReceipt: (record: Omit<SaleRecord, "id">, receipt: File, id?: string) => Promise<void>;
   deleteSale: (id: string) => void;
   savePurchase: (record: Omit<PurchaseRecord, "id">, id?: string) => void;
   deletePurchase: (id: string) => void;
@@ -187,6 +199,9 @@ export type TaxModuleContextValue = {
   deleteAsset: (id: string) => void;
   saveDocument: (record: Omit<DocumentRecord, "id">, id?: string) => void;
   deleteDocument: (id: string) => void;
+  uploadDocument: (file: File, options: { category: string; name?: string; saleId?: string }) => Promise<DocumentRecord | null>;
+  documentUrl: (doc: DocumentRecord) => Promise<string | null>;
+  refresh: () => Promise<void>;
   addImport: (record: Omit<ImportLog, "id">) => void;
   deleteImport: (id: string) => void;
   obligations: TaxObligation[];
@@ -316,12 +331,32 @@ const assetRow = (r: Omit<AssetRecord, "id">) => ({
   current_value: r.currentValue, depreciation: r.depreciation, useful_life: r.usefulLife, status: r.status,
 });
 
+export const BUCKET = "tax-documents";
+
+export function humanSize(bytes: number) {
+  if (!bytes) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function fileKind(file: File) {
+  const type = file.type || "";
+  if (type.startsWith("image/")) return "Image";
+  if (type === "application/pdf") return "PDF";
+  if (type.includes("sheet") || type.includes("excel") || file.name.endsWith(".csv")) return "Excel";
+  if (type.includes("word")) return "Word";
+  return "Other";
+}
+
 const mapDocument = (r: any): DocumentRecord => ({
   id: r.id, name: str(r.name), category: str(r.category), type: str(r.type),
   size: str(r.size), status: r.status, uploadedAt: str(r.uploaded_at),
+  filePath: str(r.file_path), saleId: str(r.sale_id),
 });
 const documentRow = (r: Omit<DocumentRecord, "id">) => ({
-  name: r.name, category: r.category, type: r.type, size: r.size, status: r.status, uploaded_at: r.uploadedAt,
+  name: r.name, category: r.category, type: r.type, size: r.size, status: r.status,
+  uploaded_at: r.uploadedAt, file_path: r.filePath || null, sale_id: r.saleId || null,
 });
 
 const mapImport = (r: any): ImportLog => ({
@@ -384,19 +419,13 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!active) return;
-      if (!data.user) { setLoading(false); return; }
-      void refresh();
-    });
-    return () => { active = false; };
+    void refresh();
   }, [refresh]);
 
   const saveSetting = useCallback(async (patch: Record<string, unknown>) => {
     const { data } = await supabase.auth.getUser();
-    if (!data.user) return;
-    await supabase.from("tax_settings").upsert({ user_id: data.user.id, ...patch } as any);
+    const userId = data.user?.id ?? "00000000-0000-0000-0000-000000000000";
+    await supabase.from("tax_settings").upsert({ user_id: userId, ...patch } as any);
   }, []);
 
   const setTaxRate = useCallback((rate: number) => {
@@ -530,11 +559,82 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
     });
   }, [saveSetting]);
 
+  const uploadDocument = useCallback(
+    async (file: File, options: { category: string; name?: string; saleId?: string }) => {
+      const ext = (file.name.split(".").pop() ?? "bin").toLowerCase();
+      const path = `${options.category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data, error } = await supabase
+        .from("tax_documents")
+        .insert(
+          documentRow({
+            name: options.name || file.name,
+            category: options.category,
+            type: fileKind(file),
+            size: humanSize(file.size),
+            status: "Pending",
+            uploadedAt: new Date().toISOString().slice(0, 10),
+            filePath: path,
+            saleId: options.saleId ?? "",
+          }) as any,
+        )
+        .select()
+        .single();
+      if (error) throw error;
+      await refresh();
+      return data ? mapDocument(data) : null;
+    },
+    [refresh],
+  );
+
+  const documentUrl = useCallback(async (doc: DocumentRecord) => {
+    if (!doc.filePath) return null;
+    const { data } = await supabase.storage.from(BUCKET).createSignedUrl(doc.filePath, 60 * 60);
+    return data?.signedUrl ?? null;
+  }, []);
+
+  const deleteDocument = useCallback(
+    (id: string) => {
+      void (async () => {
+        const doc = documents.find((row) => row.id === id);
+        if (doc?.filePath) await supabase.storage.from(BUCKET).remove([doc.filePath]);
+        await supabase.from("tax_documents").delete().eq("id", id);
+        await refresh();
+      })();
+    },
+    [documents, refresh],
+  );
+
+  const saveSaleWithReceipt = useCallback(
+    async (record: Omit<SaleRecord, "id">, receipt: File, id?: string) => {
+      let saleId = id;
+      if (id) {
+        await supabase.from("tax_sales").update(saleRow(record) as any).eq("id", id);
+      } else {
+        const { data, error } = await supabase.from("tax_sales").insert(saleRow(record) as any).select().single();
+        if (error) throw error;
+        saleId = (data as any)?.id;
+      }
+      await uploadDocument(receipt, {
+        category: "EFD Receipts",
+        name: `Receipt ${record.reference} — ${record.customer}`,
+        saleId,
+      });
+      await refresh();
+    },
+    [refresh, uploadDocument],
+  );
+
   const value: TaxModuleContextValue = {
     loading,
     sales, purchases, expenses, vatReturns, withholding, paye, incomeTax, assets, documents, imports,
     taxRate, setTaxRate, projectedAnnualProfit, setProjectedAnnualProfit,
     saveSale: makeSave("tax_sales", saleRow),
+    saveSaleWithReceipt,
     deleteSale: makeDelete("tax_sales"),
     savePurchase: makeSave("tax_purchases", purchaseRow),
     deletePurchase: makeDelete("tax_purchases"),
@@ -551,7 +651,10 @@ export function TaxModuleProvider({ children }: { children: ReactNode }) {
     saveAsset: makeSave("capital_assets", assetRow),
     deleteAsset: makeDelete("capital_assets"),
     saveDocument: makeSave("tax_documents", documentRow),
-    deleteDocument: makeDelete("tax_documents"),
+    deleteDocument,
+    uploadDocument,
+    documentUrl,
+    refresh,
     addImport: (record) => makeSave("tax_imports", importRow)(record),
     deleteImport: makeDelete("tax_imports"),
     obligations,

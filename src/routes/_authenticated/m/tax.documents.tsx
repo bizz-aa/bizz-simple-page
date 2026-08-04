@@ -1,72 +1,125 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { FolderArchive, Upload } from "lucide-react";
+import { useRef, useState } from "react";
+import { FolderArchive, Upload, FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useTaxModule, type DocumentRecord } from "@/components/tax-module-provider";
-import { RecordDialog, ConfirmDialog, str, type FieldValue } from "@/components/tax/record-dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTaxModule, DOCUMENT_CATEGORIES, type DocumentRecord } from "@/components/tax-module-provider";
+import { ConfirmDialog } from "@/components/tax/record-dialog";
 import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
+import { buildEfdReceiptsPdf } from "@/lib/tax-pdf";
 
 export const Route = createFileRoute("/_authenticated/m/tax/documents")({ component: DocumentsPage });
 
 function DocumentsPage() {
-  const { documents, saveDocument, deleteDocument } = useTaxModule();
-  const [editing, setEditing] = useState<DocumentRecord | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const { documents, deleteDocument, uploadDocument, documentUrl } = useTaxModule();
   const [detail, setDetail] = useState<DocumentRecord | null>(null);
   const [pendingDelete, setPendingDelete] = useState<DocumentRecord | null>(null);
+  const [category, setCategory] = useState<string>("Receipts");
+  const [busy, setBusy] = useState(false);
+  const [building, setBuilding] = useState(false);
+  const fileInput = useRef<HTMLInputElement | null>(null);
 
-  const openCreate = () => { setEditing(null); setFormOpen(true); };
-  const openEdit = (row: DocumentRecord) => { setEditing(row); setFormOpen(true); };
+  const efdReceipts = documents.filter((row) => row.category === "EFD Receipts");
 
-  const submit = (value: Record<string, FieldValue>) => {
-    saveDocument(
-      {
-        name: str(value.name),
-        category: str(value.category),
-        type: str(value.type),
-        size: str(value.size) || "—",
-        status: str(value.status) as DocumentRecord["status"],
-        uploadedAt: str(value.uploadedAt),
-      },
-      editing?.id,
-    );
-    toast.success(editing ? "Document updated" : "Document added");
+  const pickFiles = () => fileInput.current?.click();
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    try {
+      for (const file of Array.from(files)) {
+        await uploadDocument(file, { category });
+      }
+      toast.success(`${files.length} document(s) uploaded to ${category}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setBusy(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  const downloadEfdPdf = async () => {
+    if (efdReceipts.length === 0) { toast.error("No EFD receipts saved yet"); return; }
+    setBuilding(true);
+    try {
+      const entries = [];
+      for (const doc of efdReceipts) {
+        const url = await documentUrl(doc);
+        if (url) entries.push({ title: doc.name, date: doc.uploadedAt, url });
+      }
+      await buildEfdReceiptsPdf(entries, `efd-receipts-${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("EFD receipts PDF downloaded");
+    } catch {
+      toast.error("Could not build the receipts PDF");
+    } finally {
+      setBuilding(false);
+    }
+  };
+
+  const openFile = async (doc: DocumentRecord) => {
+    const url = await documentUrl(doc);
+    if (!url) { toast.error("No file attached to this record"); return; }
+    window.open(url, "_blank", "noopener");
   };
 
   return (
     <TaxWorkspace
       title="Document Center"
-      subtitle="Tax archive, categories and document status"
+      subtitle="Upload tax documents from your device and archive EFD receipts"
       icon={FolderArchive}
       actions={
-        <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
-          <Upload className="mr-1.5 h-4 w-4" /> Upload
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className="h-9 w-[150px] border-white/15 bg-black/25 text-white"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {DOCUMENT_CATEGORIES.map((option) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={pickFiles} disabled={busy}>
+            {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Upload className="mr-1.5 h-4 w-4" />} Upload
+          </Button>
+          <Button size="sm" variant="outline" className="h-9 border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={downloadEfdPdf} disabled={building}>
+            {building ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FileDown className="mr-1.5 h-4 w-4" />} EFD receipts PDF
+          </Button>
+          <input
+            ref={fileInput}
+            type="file"
+            multiple
+            accept="image/*,application/pdf,.csv,.xlsx,.xls,.doc,.docx"
+            className="hidden"
+            onChange={(event) => void handleFiles(event.target.files)}
+          />
+        </div>
       }
     >
       <SummaryStrip
         items={[
           { label: "Documents", value: String(documents.length), hint: "In archive", accent: true },
-          { label: "Verified", value: String(documents.filter((row) => row.status === "Verified").length), hint: "Compliance ready" },
+          { label: "EFD receipts", value: String(efdReceipts.length), hint: "Linked to sales" },
           { label: "Pending", value: String(documents.filter((row) => row.status === "Pending").length), hint: "Needs review" },
           { label: "Categories", value: String(new Set(documents.map((row) => row.category)).size), hint: "In use" },
         ]}
       />
+
+      <div className="mt-4">
+        <Label className="text-xs uppercase tracking-[0.14em] text-white/55">Upload target</Label>
+        <p className="mt-1 text-sm text-white/60">
+          Files are stored securely in your business archive. Choose a category, then upload photos, PDFs or spreadsheets from this device.
+        </p>
+      </div>
 
       <TaxTable
         rows={documents}
         searchKeys={(row) => `${row.name} ${row.category} ${row.type} ${row.status}`}
         filter={{
           label: "Category",
-          options: [
-            { value: "Receipts", label: "Receipts" },
-            { value: "Invoices", label: "Invoices" },
-            { value: "Certificates", label: "Certificates" },
-            { value: "Returns", label: "Returns" },
-            { value: "Pending", label: "Pending status" },
-          ],
-          match: (row, value) => (value === "Pending" ? row.status === "Pending" : row.category === value),
+          options: DOCUMENT_CATEGORIES.map((value) => ({ value, label: value })),
+          match: (row, value) => row.category === value,
         }}
         columns={[
           { key: "name", label: "Document", render: (row) => <span className="font-medium text-white">{row.name}</span> },
@@ -77,7 +130,6 @@ function DocumentsPage() {
           { key: "status", label: "Status", render: (row) => <StatusBadge value={row.status} /> },
         ]}
         onRowClick={setDetail}
-        onEdit={openEdit}
         onDelete={setPendingDelete}
         onExport={(rows) =>
           exportCsv(
@@ -87,26 +139,8 @@ function DocumentsPage() {
           )
         }
         addLabel="Upload document"
-        onAdd={openCreate}
-        empty={{ title: "No documents", description: "Upload invoices, receipts and certificates to build your archive.", icon: FolderArchive }}
-      />
-
-      <RecordDialog
-        open={formOpen}
-        title={editing ? "Replace document details" : "Upload document"}
-        description="Store the document reference, category and review status."
-        submitLabel={editing ? "Update" : "Upload"}
-        initialValue={editing ? { ...editing } : null}
-        onClose={() => setFormOpen(false)}
-        onSubmit={submit}
-        fields={[
-          { name: "name", label: "Document name", type: "text", required: true, half: true },
-          { name: "category", label: "Category", type: "select", options: ["Receipts", "Invoices", "Certificates", "Returns", "Other"], half: true },
-          { name: "type", label: "File type", type: "select", options: ["PDF", "Excel", "Image", "Word"], half: true },
-          { name: "size", label: "Size", type: "text", half: true },
-          { name: "uploadedAt", label: "Uploaded", type: "date", required: true, half: true },
-          { name: "status", label: "Status", type: "select", options: ["Verified", "Pending"], half: true },
-        ]}
+        onAdd={pickFiles}
+        empty={{ title: "No documents", description: "Upload invoices, receipts and certificates from your device to build the archive.", icon: FolderArchive }}
       />
 
       <DetailsDrawer
@@ -128,16 +162,7 @@ function DocumentsPage() {
         footer={
           detail ? (
             <>
-              <Button
-                variant="outline"
-                className="border-white/15 bg-white/5 text-white hover:bg-white/15"
-                onClick={() =>
-                  exportCsv("document.csv", ["Document", "Category", "Type", "Size", "Uploaded", "Status"], [[detail.name, detail.category, detail.type, detail.size, detail.uploadedAt, detail.status]])
-                }
-              >
-                Download
-              </Button>
-              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Replace</Button>
+              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => void openFile(detail)}>Open file</Button>
               <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
             </>
           ) : null
@@ -147,7 +172,7 @@ function DocumentsPage() {
       <ConfirmDialog
         open={Boolean(pendingDelete)}
         title="Delete document"
-        description={`${pendingDelete?.name ?? ""} will be removed from the archive.`}
+        description={`${pendingDelete?.name ?? ""} will be removed from the archive and storage.`}
         onClose={() => setPendingDelete(null)}
         onConfirm={() => { if (pendingDelete) { deleteDocument(pendingDelete.id); toast.success("Document deleted"); } }}
       />
