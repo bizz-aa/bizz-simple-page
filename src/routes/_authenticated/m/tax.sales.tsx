@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ShoppingCart, Plus } from "lucide-react";
+import { ShoppingCart, Plus, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useTaxModule, formatCurrency, periodOf, type SaleRecord } from "@/components/tax-module-provider";
 import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
 import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
@@ -10,35 +11,45 @@ import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, expor
 export const Route = createFileRoute("/_authenticated/m/tax/sales")({ component: TaxSalesPage });
 
 function TaxSalesPage() {
-  const { sales, saveSale, deleteSale, metrics } = useTaxModule();
+  const { sales, saveSale, saveSaleWithReceipt, deleteSale, deleteDocument, documents, documentUrl, metrics } = useTaxModule();
   const [editing, setEditing] = useState<SaleRecord | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState<SaleRecord | null>(null);
   const [pendingDelete, setPendingDelete] = useState<SaleRecord | null>(null);
+  const [receipt, setReceipt] = useState<File | null>(null);
 
-  const openCreate = () => { setEditing(null); setFormOpen(true); };
-  const openEdit = (row: SaleRecord) => { setEditing(row); setFormOpen(true); };
+  const receiptFor = (saleId: string) => documents.find((row) => row.saleId === saleId);
+
+  const openCreate = () => { setEditing(null); setReceipt(null); setFormOpen(true); };
+  const openEdit = (row: SaleRecord) => { setEditing(row); setReceipt(null); setFormOpen(true); };
 
   const submit = (value: Record<string, FieldValue>) => {
-    saveSale(
-      {
-        reference: str(value.reference),
-        customer: str(value.customer),
-        date: str(value.date),
-        amount: num(value.amount),
-        vat: num(value.vat),
-        taxPeriod: periodOf(str(value.date)),
-        status: str(value.status) as SaleRecord["status"],
-      },
-      editing?.id,
-    );
-    toast.success(editing ? "Sales record updated" : "Sales record created");
+    const record = {
+      reference: str(value.reference),
+      customer: str(value.customer),
+      date: str(value.date),
+      amount: num(value.amount),
+      vat: num(value.vat),
+      taxPeriod: periodOf(str(value.date)),
+      status: str(value.status) as SaleRecord["status"],
+    };
+    if (receipt) {
+      void saveSaleWithReceipt(record, receipt, editing?.id)
+        .then(() => toast.success(editing ? "Sale updated with receipt" : "Sale saved with receipt"))
+        .catch((error) => toast.error(error instanceof Error ? error.message : "Could not save receipt"));
+    } else {
+      saveSale(record, editing?.id);
+      toast.success("Sales record updated");
+    }
+    setReceipt(null);
   };
+
+  const needsReceipt = !editing && !receipt;
 
   return (
     <TaxWorkspace
       title="EFD Sales"
-      subtitle="Sales captured through the EFD register"
+      subtitle="Every EFD sale must carry a photo of its receipt"
       icon={ShoppingCart}
       actions={
         <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
