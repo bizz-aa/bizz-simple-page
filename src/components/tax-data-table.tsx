@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function TaxDataTable<T extends { id: number; [key: string]: unknown }>({
+export function TaxDataTable<T extends { id: string; [key: string]: unknown }>({
   title,
   rows,
   columns,

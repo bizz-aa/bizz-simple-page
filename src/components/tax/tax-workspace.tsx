@@ -145,7 +145,7 @@ export type TaxFilter<T> = {
   match: (row: T, value: string) => boolean;
 };
 
-export function TaxTable<T extends { id: number }>({
+export function TaxTable<T extends { id: string }>({
   rows,
   columns,
   searchKeys,
