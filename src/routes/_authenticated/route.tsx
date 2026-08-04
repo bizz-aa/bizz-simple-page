@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useRouter, useRouterState, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, ShoppingCart, Package, Wallet, Users, BarChart3, Settings,
@@ -84,7 +84,7 @@ function AuthedLayout() {
     qc.clear();
     await supabase.auth.signOut();
     toast.success("Signed out");
-    router.navigate({ to: "/", replace: true });
+    router.navigate({ to: "/auth", replace: true });
   };
 
   return (
