@@ -57,17 +57,21 @@ export type SummaryItem = { label: string; value: string; hint?: string; accent?
 
 export function SummaryStrip({ items }: { items: SummaryItem[] }) {
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
       {items.map((item) => (
         <div
           key={item.label}
-          className={`rounded-2xl border p-4 backdrop-blur-xl ${
+          className={`min-w-0 rounded-2xl border p-3 backdrop-blur-xl sm:p-4 ${
             item.accent ? "border-amber-300/30 bg-amber-400/10" : "border-white/15 bg-white/[0.06]"
           }`}
         >
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/50">{item.label}</p>
-          <p className="mt-2 truncate font-display text-lg font-semibold text-white sm:text-xl">{item.value}</p>
-          {item.hint ? <p className="mt-1 truncate text-xs text-white/50">{item.hint}</p> : null}
+          <p className="break-words text-[10px] uppercase leading-tight tracking-[0.14em] text-white/50 sm:text-[11px] sm:tracking-[0.18em]">
+            {item.label}
+          </p>
+          <p className="mt-2 break-words font-display text-base font-semibold leading-tight text-white sm:text-xl">
+            {item.value}
+          </p>
+          {item.hint ? <p className="mt-1 break-words text-[11px] leading-snug text-white/50 sm:text-xs">{item.hint}</p> : null}
         </div>
       ))}
     </section>
