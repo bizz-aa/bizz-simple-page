@@ -2,11 +2,9 @@ import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-r
 import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, ShoppingCart, Package, Wallet, Users, BarChart3, Settings,
-  LogOut, Bell, Landmark, UserRound,
+  Bell, Landmark, UserRound,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import desertSunsetBg from "@/assets/desert-sunset-bg.jpg";
 import { MobileNav } from "@/components/mobile-nav";
 
@@ -155,7 +153,6 @@ function AuthedLayout() {
                   <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-black">{alerts}</span>
                 ) : null}
               </button>
-              </div>
             </div>
           </div>
         </header>

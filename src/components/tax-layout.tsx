@@ -163,8 +163,6 @@ export function TaxLayout({
         {children}
       </div>
 
-      {showBottomNav ? (
-      ) : null}
     </div>
   );
 }
