@@ -31,6 +31,7 @@ import { Route as AuthenticatedMTaxIncomeRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMTaxImportRouteImport } from './routes/_authenticated/m/tax.import'
 import { Route as AuthenticatedMTaxExpensesRouteImport } from './routes/_authenticated/m/tax.expenses'
 import { Route as AuthenticatedMTaxDocumentsRouteImport } from './routes/_authenticated/m/tax.documents'
+import { Route as AuthenticatedMTaxCalendarRouteImport } from './routes/_authenticated/m/tax.calendar'
 import { Route as AuthenticatedMTaxAssetsRouteImport } from './routes/_authenticated/m/tax.assets'
 import { Route as AuthenticatedMCrmReportsRouteImport } from './routes/_authenticated/m/crm.reports'
 import { Route as AuthenticatedMCrmCustomersRouteImport } from './routes/_authenticated/m/crm.customers'
@@ -153,6 +154,12 @@ const AuthenticatedMTaxDocumentsRoute =
     path: '/documents',
     getParentRoute: () => AuthenticatedMTaxRoute,
   } as any)
+const AuthenticatedMTaxCalendarRoute =
+  AuthenticatedMTaxCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedMTaxRoute,
+  } as any)
 const AuthenticatedMTaxAssetsRoute = AuthenticatedMTaxAssetsRouteImport.update({
   id: '/assets',
   path: '/assets',
@@ -213,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/m/crm/customers': typeof AuthenticatedMCrmCustomersRouteWithChildren
   '/m/crm/reports': typeof AuthenticatedMCrmReportsRoute
   '/m/tax/assets': typeof AuthenticatedMTaxAssetsRoute
+  '/m/tax/calendar': typeof AuthenticatedMTaxCalendarRoute
   '/m/tax/documents': typeof AuthenticatedMTaxDocumentsRoute
   '/m/tax/expenses': typeof AuthenticatedMTaxExpensesRoute
   '/m/tax/import': typeof AuthenticatedMTaxImportRoute
@@ -242,6 +250,7 @@ export interface FileRoutesByTo {
   '/m/crm/customers': typeof AuthenticatedMCrmCustomersRouteWithChildren
   '/m/crm/reports': typeof AuthenticatedMCrmReportsRoute
   '/m/tax/assets': typeof AuthenticatedMTaxAssetsRoute
+  '/m/tax/calendar': typeof AuthenticatedMTaxCalendarRoute
   '/m/tax/documents': typeof AuthenticatedMTaxDocumentsRoute
   '/m/tax/expenses': typeof AuthenticatedMTaxExpensesRoute
   '/m/tax/import': typeof AuthenticatedMTaxImportRoute
@@ -274,6 +283,7 @@ export interface FileRoutesById {
   '/_authenticated/m/crm/customers': typeof AuthenticatedMCrmCustomersRouteWithChildren
   '/_authenticated/m/crm/reports': typeof AuthenticatedMCrmReportsRoute
   '/_authenticated/m/tax/assets': typeof AuthenticatedMTaxAssetsRoute
+  '/_authenticated/m/tax/calendar': typeof AuthenticatedMTaxCalendarRoute
   '/_authenticated/m/tax/documents': typeof AuthenticatedMTaxDocumentsRoute
   '/_authenticated/m/tax/expenses': typeof AuthenticatedMTaxExpensesRoute
   '/_authenticated/m/tax/import': typeof AuthenticatedMTaxImportRoute
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/m/crm/customers'
     | '/m/crm/reports'
     | '/m/tax/assets'
+    | '/m/tax/calendar'
     | '/m/tax/documents'
     | '/m/tax/expenses'
     | '/m/tax/import'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/m/crm/customers'
     | '/m/crm/reports'
     | '/m/tax/assets'
+    | '/m/tax/calendar'
     | '/m/tax/documents'
     | '/m/tax/expenses'
     | '/m/tax/import'
@@ -366,6 +378,7 @@ export interface FileRouteTypes {
     | '/_authenticated/m/crm/customers'
     | '/_authenticated/m/crm/reports'
     | '/_authenticated/m/tax/assets'
+    | '/_authenticated/m/tax/calendar'
     | '/_authenticated/m/tax/documents'
     | '/_authenticated/m/tax/expenses'
     | '/_authenticated/m/tax/import'
@@ -540,6 +553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMTaxDocumentsRouteImport
       parentRoute: typeof AuthenticatedMTaxRoute
     }
+    '/_authenticated/m/tax/calendar': {
+      id: '/_authenticated/m/tax/calendar'
+      path: '/calendar'
+      fullPath: '/m/tax/calendar'
+      preLoaderRoute: typeof AuthenticatedMTaxCalendarRouteImport
+      parentRoute: typeof AuthenticatedMTaxRoute
+    }
     '/_authenticated/m/tax/assets': {
       id: '/_authenticated/m/tax/assets'
       path: '/assets'
@@ -629,6 +649,7 @@ const AuthenticatedMCrmRouteWithChildren =
 
 interface AuthenticatedMTaxRouteChildren {
   AuthenticatedMTaxAssetsRoute: typeof AuthenticatedMTaxAssetsRoute
+  AuthenticatedMTaxCalendarRoute: typeof AuthenticatedMTaxCalendarRoute
   AuthenticatedMTaxDocumentsRoute: typeof AuthenticatedMTaxDocumentsRoute
   AuthenticatedMTaxExpensesRoute: typeof AuthenticatedMTaxExpensesRoute
   AuthenticatedMTaxImportRoute: typeof AuthenticatedMTaxImportRoute
@@ -642,6 +663,7 @@ interface AuthenticatedMTaxRouteChildren {
 
 const AuthenticatedMTaxRouteChildren: AuthenticatedMTaxRouteChildren = {
   AuthenticatedMTaxAssetsRoute: AuthenticatedMTaxAssetsRoute,
+  AuthenticatedMTaxCalendarRoute: AuthenticatedMTaxCalendarRoute,
   AuthenticatedMTaxDocumentsRoute: AuthenticatedMTaxDocumentsRoute,
   AuthenticatedMTaxExpensesRoute: AuthenticatedMTaxExpensesRoute,
   AuthenticatedMTaxImportRoute: AuthenticatedMTaxImportRoute,
