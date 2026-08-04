@@ -164,43 +164,8 @@ export function TaxLayout({
       </div>
 
       {showBottomNav ? (
-        <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/20 bg-black/40 backdrop-blur-xl lg:hidden">
-          <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
-            <BottomBtn label="Home" icon={Home} to="/dashboard" />
-            <BottomBtn label="Sales" icon={ShoppingCart} to="/m/sales" />
-            <BottomBtn label="Scan" icon={Scan} big to="/pos" />
-            <BottomBtn label="Stock" icon={Package} to="/m/inventory" />
-            <BottomBtn label="More" icon={MoreHorizontal} to="/m/admin" />
-          </div>
-        </nav>
       ) : null}
     </div>
   );
 }
 
-function BottomBtn({
-  label, icon: Icon, active, big, to,
-}: { label: string; icon: LucideIcon; active?: boolean; big?: boolean; to?: string }) {
-  const content = (
-    <>
-      <span
-        className={`grid place-items-center rounded-full transition ${
-          big ? "h-14 w-14 -mt-6 shadow-lg shadow-amber-500/40" : "h-10 w-10"
-        } ${active || big ? "bg-amber-500 text-white" : "bg-white/10 text-white/70"}`}
-      >
-        <Icon className={big ? "h-6 w-6" : "h-5 w-5"} />
-      </span>
-      <span className={`text-[10px] ${active ? "text-white" : "text-white/60"}`}>{label}</span>
-    </>
-  );
-
-  if (to) {
-    return (
-      <Link to={to} className="flex flex-col items-center gap-1">
-        {content}
-      </Link>
-    );
-  }
-
-  return <button className="flex flex-col items-center gap-1">{content}</button>;
-}
